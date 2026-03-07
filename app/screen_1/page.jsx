@@ -437,7 +437,7 @@ export default function BudgetApp() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
                 <input type="text" value={filters.header_name}
-                  onChange={(e) => handleFilterChange("name", e.target.value)}
+                  onChange={(e) => handleFilterChange("header_name", e.target.value)}
                   className="custom-input"
                   placeholder="วัสดุ..." />
               </div>
