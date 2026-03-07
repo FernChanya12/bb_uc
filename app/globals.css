@@ -146,99 +146,99 @@ table {
   background-color: #fefce8 !important; 
 }
 
-  .modern-table td {
-    padding: 12px 16px;
-    vertical-align: middle;
-    border-bottom: 1px solid #f0f0f0;
-    color: #333;
-    font-family: var(--ftext-regular);
-    font-size: var(--stext-16);
-  }
+.modern-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  font-family: var(--ftext-regular);
+  font-size: var(--stext-16);
+}
 
-  .kebab-cell {
-    position: relative;
-    width: 40px;
-    text-align: center;
-  }
+.kebab-cell {
+  position: relative;
+  width: 40px;
+  text-align: center;
+}
 
-  .progress-container {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 140px;
-  }
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
 
-  .progress-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-  }
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
 
-  .progress-label {
-    width: 60px;
-    color: #666;
-    text-align: right;
-  }
+.progress-label {
+  width: 60px;
+  color: #666;
+  text-align: right;
+}
 
-  .progress-track {
-    flex-grow: 1;
-    height: 6px;
-    background-color: #e9ecef;
-    border-radius: 10px;
-    overflow: hidden;
-  }
+.progress-track {
+  flex-grow: 1;
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+}
 
-  .progress-fill {
-    height: 100%;
-    border-radius: 10px;
-    transition: width 0.5s ease;
-  }
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
 
-  .progress-fill.ocr {
-    background-color: var(--second-80);
-    ;
-  }
+.progress-fill.ocr {
+  background-color: var(--second-80);
+  ;
+}
 
-  .progress-fill.officer {
-    background-color: var(--approve-100);
-  }
+.progress-fill.officer {
+  background-color: var(--approve-100);
+}
 
-  .progress-fill.officer.alert {
-    background-color: var(--disapprove-80);
-  }
+.progress-fill.officer.alert {
+  background-color: var(--disapprove-80);
+}
 
 
-  .progress-text {
-    width: 35px;
-    text-align: right;
-    font-weight: 500;
-    color: #555;
-  }
+.progress-text {
+  width: 35px;
+  text-align: right;
+  font-weight: 500;
+  color: #555;
+}
 
-  .status-badge {
-    display: inline-flex;
-    padding: 4px 12px;
-    border-radius: 50px;
-    font-weight: 600;
-    background-color: #eee;
-    color: #555;
-  }
+.status-badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-weight: 600;
+  background-color: #eee;
+  color: #555;
+}
 
-  .status-deliver {
-    color: var(--second-80);
-    background-color: var(--second-0);
-  }
+.status-deliver {
+  color: var(--second-80);
+  background-color: var(--second-0);
+}
 
-  .status-success {
-    color: var(--approve-100);
-    background-color: var(--approve-10);
-  }
+.status-success {
+  color: var(--approve-100);
+  background-color: var(--approve-10);
+}
 
-  .status-cancel {
-    color: var(--disapprove-80);
-    background-color: var(--disapprove-10);
-  }
+.status-cancel {
+  color: var(--disapprove-80);
+  background-color: var(--disapprove-10);
+}
 
 .kebab-menu {
   background-color: #ffffff;

@@ -58,30 +58,17 @@ const formatNumber = (n) =>
 function CustomDropdown({ options, value, placeholder, isOpen, onToggle, onSelect }) {
   const ref = useRef(null);
 
-  console.log("Rendering CustomDropdown with value:", options);
-
-  // useEffect(() => {
-  //   function handleClickOutside(e) {
-  //     if (ref.current && !ref.current.contains(e.target)) {
-  //       if (isOpen) onToggle();
-  //     }
-  //   }
-  //   document.addEventListener("click", handleClickOutside);
-  //   return () => document.removeEventListener("click", handleClickOutside);
-  // }, [isOpen, onToggle]);
 
   useEffect(() => {
-  // ฟังก์ชันนี้จะสั่งปิดเมนู Kebab ทุกอันเมื่อเราคลิกที่อื่นบนหน้าจอ
-  const handleClickOutside = () => {
-    setActiveMenu(null); // ปิดเมนูโดยการ set state เป็น null
-  };
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        if (isOpen) onToggle();
+      }
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [isOpen, onToggle]);
 
-  // ดักจับการคลิกที่ document
-  document.addEventListener("click", handleClickOutside);
-
-  // Cleanup: ลบ event เมื่อปิดหน้านี้
-  return () => document.removeEventListener("click", handleClickOutside);
-}, []);
   const selectedLabel = options.find((o) => o.value === value)?.label;
 
   return (
@@ -90,21 +77,11 @@ function CustomDropdown({ options, value, placeholder, isOpen, onToggle, onSelec
         {selectedLabel ? (
           <span>{selectedLabel}</span>
         ) : (
-          <span className="">{placeholder}</span>
+          <span>{placeholder}</span>
         )}
         <div className="custom-dropdown-icon">
-          <svg
-            className="w-5 h-5 "
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </div>
@@ -113,9 +90,7 @@ function CustomDropdown({ options, value, placeholder, isOpen, onToggle, onSelec
           {options.map((opt) => (
             <div
               key={opt.value}
-              className={`custom-dropdown-option${
-                value === opt.value ? " selected" : ""
-              }`}
+              className={`custom-dropdown-option${value === opt.value ? " selected" : ""}`}
               onClick={() => onSelect(opt.value)}
             >
               {opt.label}
@@ -126,7 +101,6 @@ function CustomDropdown({ options, value, placeholder, isOpen, onToggle, onSelec
     </div>
   );
 }
-
 export default function Screen4Page() {
   // --- state ---
   const [selectedYear] = useState("2568");
@@ -866,15 +840,13 @@ export default function Screen4Page() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    
-            <div className="p-4 md:p-6"> 
-              
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 md:p-6">
               <div className="overflow-x-auto">
-                <table className="modern-table w-full"> 
-                  <thead className="bg-gray-50/50"> 
+                <table className="modern-table w-full">
+                  <thead className="bg-gray-50/50">
                     <tr>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">#</th>                    
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
                       <th className="px-6 py-3">
                         <div className="flex justify-center">
                           <input
@@ -892,53 +864,76 @@ export default function Screen4Page() {
                       <th className="px-6 py-3 text-center">ประเภท</th>
                     </tr>
                   </thead>
-                  
                   <tbody className="divide-y divide-gray-200">
                     {pagedItems.map((item, idx) => {
-                      const itemId = item.id || item.uid || idx; 
+                      // ใช้ itemId ที่ไม่ซ้ำกันแน่นอน
+                      const itemId = item.uid || item.code || `row-${idx}`;
+                      const globalIdx = (currentPage - 1) * itemsPerPage + idx;
 
-                        const globalIdx = (currentPage - 1) * itemsPerPage + idx;
-                        return (
+                      return (
                         <tr
-                          key={item.uid ?? idx}
-                          className="modern-table-row" 
-                          onDoubleClick={() => editItem(item)}
+                          key={itemId}
+                          className="modern-table-row hover:bg-gray-50/50 transition-colors"
+                          // ลบ onClick และ onDoubleClick ออกจากตรงนี้แล้วค่ะ
                         >
+                          {/* 1. คอลัมน์ Kebab Menu */}
                           <td className="px-4 py-4 text-center">
-                            <KebabMenu 
-                              itemId={item.uid || item.code} 
-                              activeMenu={activeMenu} 
+                            <KebabMenu
+                              itemId={itemId}
+                              activeMenu={activeMenu}
                               setActiveMenu={setActiveMenu}
                             >
-                              <button className="kebab-menu-item" onClick={() => handleEdit(item.uid)}>
-                                <i className="fa fa-edit"></i> ดูรายละเอียด
+                              <button 
+                                className="kebab-menu-item w-full" 
+                                onClick={() => handleEdit(item.uid)}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye text-blue-500" viewBox="0 0 16 16">
+                                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                </svg> 
+                                <span>ดูรายละเอียด</span>
                               </button>
-                              <button className="kebab-menu-item text-red-500" onClick={() => handleDelete(item.uid)}>
-                                <i className="fa fa-trash"></i> ลบรายการ
+
+                              <button 
+                                className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
+                                onClick={() => handleDelete(item.uid)}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
+                                  <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                </svg> 
+                                <span>ลบรายการ</span>
                               </button>
                             </KebabMenu>
                           </td>
-                          <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+
+                          {/* 2. Checkbox */}
+                          <td className="px-6 py-4 text-center">
                             <input
                               type="checkbox"
                               className="custom-checkbox"
-                              checked={item.selected}
+                              checked={item.selected || false}
                               onChange={() => handleItemSelect(globalIdx)}
                             />
                           </td>
+
+                          {/* 3. ข้อมูลอื่นๆ */}
                           <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
                           <td className="px-6 py-4">{item.code}</td>
-                          <td className="px-6 py-4">{item.description}</td>
-                          <td className="px-6 py-4">{item.year}</td>
-                          <td className="px-6 py-4">{item.type}</td>
+                          <td className="px-6 py-4 font-medium text-gray-700">{item.description}</td>
+                          <td className="px-6 py-4 text-center">{item.year}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
+                              {item.type}
+                            </span>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </div> 
-            <Pagination 
+            </div>
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={totalItems}
@@ -946,7 +941,7 @@ export default function Screen4Page() {
               changeItemsPerPage={changeItemsPerPage}
               goToPage={goToPage}
             />
-          </div>    
+          </div>
         </div>
       </div>
 
@@ -1080,216 +1075,7 @@ export default function Screen4Page() {
         </div>
       )}
 
-      {/* ═══════ Modal Dialog ═══════ */}
-      {showNewDialog && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-            onClick={closeNewDialog}
-          />
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {isEditMode ? "แก้ไขรายการงาน" : "เพิ่มรายการงาน"}
-                </h3>
-                <button
-                  type="button"
-                  className=" hover:"
-                  onClick={closeNewDialog}
-                >
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 py-6 space-y-4">
-                {/* รหัส */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    รหัส <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newItem.code}
-                    onChange={(e) => updateNewItem({ code: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* กลุ่ม */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    กลุ่ม
-                  </label>
-                  <CustomDropdown
-                    options={buildingGroups}
-                    value={newItem.buildingGroup}
-                    placeholder="เลือกกลุ่ม..."
-                    isOpen={openDropdown === "buildingGroup"}
-                    onToggle={() => toggleDropdown("buildingGroup")}
-                    onSelect={(v) => {
-                      updateNewItem({ buildingGroup: v });
-                      setOpenDropdown(null);
-                    }}
-                  />
-                </div>
-
-                {/* ชื่อรายการ + หน่วย */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ชื่อรายการ <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={newItem.itemName}
-                      onChange={(e) =>
-                        updateNewItem({ itemName: e.target.value })
-                      }
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      หน่วย <span className="text-red-500">*</span>
-                    </label>
-                    <CustomDropdown
-                      options={units}
-                      value={newItem.unit}
-                      placeholder="ค้นหา..."
-                      isOpen={openDropdown === "unit"}
-                      onToggle={() => toggleDropdown("unit")}
-                      onSelect={(v) => {
-                        updateNewItem({ unit: v });
-                        setOpenDropdown(null);
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* วัสดุ + ค่าวัสดุ */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      วัสดุ
-                    </label>
-                    <CustomDropdown
-                      options={materials}
-                      value={newItem.material}
-                      placeholder="ค้นหาวัสดุ..."
-                      isOpen={openDropdown === "material"}
-                      onToggle={() => toggleDropdown("material")}
-                      onSelect={(v) => {
-                        updateNewItem({ material: v });
-                        setOpenDropdown(null);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ค่าวัสดุ
-                    </label>
-                    <input
-                      type="number"
-                      value={newItem.materialCost}
-                      onChange={(e) =>
-                        updateNewItem({
-                          materialCost: Number(e.target.value),
-                        })
-                      }
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* แรงงาน + ค่าแรง */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      แรงงาน <span className="text-red-500">*</span>
-                    </label>
-                    <CustomDropdown
-                      options={laborTypes}
-                      value={newItem.labor}
-                      placeholder="ค้นหาแรงงาน..."
-                      isOpen={openDropdown === "labor"}
-                      onToggle={() => toggleDropdown("labor")}
-                      onSelect={(v) => {
-                        updateNewItem({ labor: v });
-                        setOpenDropdown(null);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ค่าแรง
-                    </label>
-                    <input
-                      type="number"
-                      value={newItem.laborCost}
-                      onChange={(e) =>
-                        updateNewItem({ laborCost: Number(e.target.value) })
-                      }
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* ราคารวม */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ราคารวม
-                  </label>
-                  <input
-                    type="number"
-                    value={
-                      (newItem.materialCost || 0) + (newItem.laborCost || 0)
-                    }
-                    disabled
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-start gap-3">
-                <button
-                  type="button"
-                  onClick={closeNewDialog}
-                  className="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={saveNewItem}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    
 
       {/* ═══════ Add Choice Modal ═══════ */}
       {addChoiceGroupId !== null && (
