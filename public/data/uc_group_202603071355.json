@@ -1,0 +1,123 @@
+{
+"uc_group": [
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd10",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "1. งานส่งเสริมและพัฒนาสถาบันครอบครัว เด็ก เยาวชน สตรี คนชรา ผู้พิการ และผู้ด้อยโอกาส",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd11",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "2. งานราชทัณฑ์",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd12",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "3. งานปลูกป่า",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd13",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "4. งานบ่อน้ำบาดาล",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd14",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "5. งานขุดลอกร่องน้ำ",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd15",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "6. งานขุดสระน้ำ",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd16",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "7. งานพัฒนาการเกษตรที่สูง",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd17",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "8. งานวางแผนการใช้ที่ดิน",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd18",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "9. งานสำรวจรังวัด",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	},
+	{
+		"UID" : "1f2eaca6-b3c5-c62b-5b14-e8091cf2cd19",
+		"fiscal" : "2568",
+		"group_code" : null,
+		"group_name" : "10. งานก่อสร้างชลประทาน",
+		"status" : "T",
+		"remark" : null,
+		"created_by" : null,
+		"created_date" : "2026-03-06 10:58:09",
+		"updated_by" : null,
+		"updated_date" : "2026-03-06 10:58:09"
+	}
+]}

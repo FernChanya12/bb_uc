@@ -1,0 +1,318 @@
+{
+"uc_unit": [
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff809",
+		"unit_code" : "U028",
+		"unit_name" : "บาท\/หลุม",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80a",
+		"unit_code" : "U015",
+		"unit_name" : "บาท\/ตัวอย่าง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80b",
+		"unit_code" : "U017",
+		"unit_name" : "บาท\/ถุง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80c",
+		"unit_code" : "U002",
+		"unit_name" : "บาท\/กก.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80d",
+		"unit_code" : "U014",
+		"unit_name" : "บาท\/ตัน",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80e",
+		"unit_code" : "U022",
+		"unit_name" : "บาท\/ลิตร",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff80f",
+		"unit_code" : "U008",
+		"unit_name" : "บาท\/คน\/ปี",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff810",
+		"unit_code" : "U025",
+		"unit_name" : "บาท\/ลุ่มนํ้า",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff811",
+		"unit_code" : "U006",
+		"unit_name" : "บาท\/กม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff812",
+		"unit_code" : "U033",
+		"unit_name" : "บาท\/แห่ง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff813",
+		"unit_code" : "U005",
+		"unit_name" : "บาท\/กม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "6f88b3e1-46dc-d566-e065-6ce926fff814",
+		"unit_code" : "U032",
+		"unit_name" : "บาท\/แปลง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff800",
+		"unit_code" : "U035",
+		"unit_name" : "บาท\/ไร่",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff801",
+		"unit_code" : "U019",
+		"unit_name" : "บาท\/บาน",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff802",
+		"unit_code" : "U021",
+		"unit_name" : "บาท\/ลบ.ม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff803",
+		"unit_code" : "U011",
+		"unit_name" : "บาท\/ต.ร.ม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff804",
+		"unit_code" : "U009",
+		"unit_name" : "บาท\/ครั้ง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff805",
+		"unit_code" : "U012",
+		"unit_name" : "บาท\/ตร.กม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff806",
+		"unit_code" : "U010",
+		"unit_name" : "บาท\/ชุด",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff807",
+		"unit_code" : "U030",
+		"unit_name" : "บาท\/เมตร",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff808",
+		"unit_code" : "U020",
+		"unit_name" : "บาท\/บ่อ",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff809",
+		"unit_code" : "U027",
+		"unit_name" : "บาท\/หลุม",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff810",
+		"unit_code" : "U016",
+		"unit_name" : "บาท\/ตัวอย่าง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff811",
+		"unit_code" : "U018",
+		"unit_name" : "บาท\/ถุง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff812",
+		"unit_code" : "U001",
+		"unit_name" : "บาท\/กก.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff813",
+		"unit_code" : "U013",
+		"unit_name" : "บาท\/ตัน",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff814",
+		"unit_code" : "U023",
+		"unit_name" : "บาท\/ลิตร",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff815",
+		"unit_code" : "U007",
+		"unit_name" : "บาท\/คน\/ปี",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff816",
+		"unit_code" : "U024",
+		"unit_name" : "บาท\/ลุ่มนํ้า",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff817",
+		"unit_code" : "U003",
+		"unit_name" : "บาท\/กม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff818",
+		"unit_code" : "U034",
+		"unit_name" : "บาท\/แห่ง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff819",
+		"unit_code" : "U004",
+		"unit_name" : "บาท\/กม.",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff820",
+		"unit_code" : "U031",
+		"unit_name" : "บาท\/แปลง",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff821",
+		"unit_code" : "U029",
+		"unit_name" : "บาท\/เที่ยว",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	},
+	{
+		"UID" : "9f88b3e1-46dc-d566-e065-6ce926fff822",
+		"unit_code" : "U026",
+		"unit_name" : "บาท\/สถานี",
+		"created_by" : null,
+		"created_date" : "2026-03-04 15:06:43",
+		"updated_by" : null,
+		"updated_date" : "2026-03-04 15:06:43"
+	}
+]}
