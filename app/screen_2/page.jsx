@@ -10,24 +10,24 @@ import Swal from "sweetalert2";
 const BASE_URL = "http://localhost:3000/api";
 
 const ApiService = {
-  callScreen1: (params) => {
+  callData: (params) => {
     const query = new URLSearchParams(params).toString();
-    return fetch(`${BASE_URL}/ucHeader?${query}`).then((r) => r.json());
+    return fetch(`${BASE_URL}/ucItem?${query}`).then((r) => r.json());
   },
   createItem: (data) =>
-    fetch(`${BASE_URL}/ucHeader`, {
+    fetch(`${BASE_URL}/ucItem`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then((r) => r.json()),
   updateItem: (data) =>
-    fetch(`${BASE_URL}/ucHeader`, {
+    fetch(`${BASE_URL}/ucItem`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then((r) => r.json()),
   deleteItem: (uid) =>
-    fetch(`${BASE_URL}/ucHeader?UID=${uid}`, {
+    fetch(`${BASE_URL}/ucItem?UID=${uid}`, {
       method: "DELETE",
     }).then((r) => r.json()),
 };
@@ -130,10 +130,10 @@ function Modal({ show, onClose, title, children, footer }) {
 function ItemForm({ item, onChange, unitList }) {
   return (
     <>
-      <label className="text-label">ชื่อวัสดุ</label>
-      <input className="custom-input" type="text" value={item.header_name} placeholder="ชื่อวัสดุ" onChange={(e) => onChange({ ...item, header_name: e.target.value })} />
+      <label className="text-label">ชื่อแรงงาน</label>
+      <input className="custom-input" type="text" value={item.item_name} placeholder="ชื่อแรงงาน" onChange={(e) => onChange({ ...item, item_name: e.target.value })} />
 
-      <label className="text-label mt-3">UOM</label>
+      <label className="text-label mt-3">หน่วยวัด</label>
       <select value={item.unitId} onChange={(e) => onChange({ ...item, unitId: e.target.value })}
         className="custom-input"
         placeholder="ค้นหา">
@@ -145,10 +145,6 @@ function ItemForm({ item, onChange, unitList }) {
         ))}
       </select>
 
-      <label className="text-label mt-3">รหัสกระทรวงพาณิชย์</label>
-      <input className="custom-input" type="text" value={item.header_code} placeholder="รหัสกระทรวงพาณิชย์" onChange={(e) => onChange({ ...item, header_code: e.target.value })} />
-
-
     </>
   );
 }
@@ -156,8 +152,8 @@ function ItemForm({ item, onChange, unitList }) {
 // ============================================================
 // Main BudgetApp Component
 // ============================================================
-const EMPTY_ITEM = { header_name: "", header_code: "", fiscal: "2568", unitId: "", remark: "" };
-const EMPTY_FILTERS = { header_name: "", header_code: "", unitId: "", itemStatus: "", searchText: "" };
+const EMPTY_ITEM = { item_name: "", item_code: "", fiscal: "2568", unitId: "", remark: "" };
+const EMPTY_FILTERS = { item_name: "", item_code: "", unitId: "", itemStatus: "", searchText: "" };
 
 export default function BudgetApp() {
   // Data
@@ -195,11 +191,11 @@ export default function BudgetApp() {
     setIsLoading(true);
     try {
       const params = {};
-      if (f.header_code) params.header_code = f.header_code;
-      if (f.header_name) params.header_name = f.header_name;
+      if (f.item_code) params.item_code = f.item_code;
+      if (f.item_name) params.item_name = f.item_name;
       if (f.unitId) params.unitId = f.unitId;
 
-      const res = await ApiService.callScreen1(params);
+      const res = await ApiService.callData(params);
       if (res) {
         setItems(res);
         setCurrentPage(1);
@@ -268,18 +264,13 @@ export default function BudgetApp() {
   };
 
   const saveItem = async () => {
-    if (!formItem.header_name) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก ชื่อวัสดุ", "warning");
+    if (!formItem.item_name) {
+      Swal.fire("แจ้งเตือน", "กรุณากรอก ชื่อแรงงาน", "warning");
       return;
     }
 
     if (!formItem.unitId) {
-      Swal.fire("แจ้งเตือน", "กรุณาเลือก UOM", "warning");
-      return;
-    }
-
-    if (!formItem.header_code) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก รหัสกระทรวงพาณิชย์", "warning");
+      Swal.fire("แจ้งเตือน", "กรุณาเลือก หน่วยวัด", "warning");
       return;
     }
 
@@ -377,7 +368,7 @@ export default function BudgetApp() {
     <div className="bg-gray-50 min-h-screen center-template">
       <div className="container mx-auto px-6 py-6">
 
-        <div className="text-black text-2xl font-medium mb-3">หัวข้อรายการ</div>
+        <div className="text-black text-2xl font-medium mb-3">รายการ</div>
 
         {/* Filter Section */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
@@ -414,23 +405,13 @@ export default function BudgetApp() {
           >
             <div className="grid grid-cols-1 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
-                <input type="text" value={filters.header_name}
-                  onChange={(e) => handleFilterChange("header_name", e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 mb-2">แรงงาน</label>
+                <input type="text" value={filters.item_name}
+                  onChange={(e) => handleFilterChange("item_name", e.target.value)}
                   className="custom-input"
-                  placeholder="วัสดุ..." />
+                  placeholder="แรงงาน..." />
               </div>
 
-              {/* GFMIS */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
-                <input type="text" value={filters.header_code}
-                  onChange={(e) => handleFilterChange("header_code", e.target.value)}
-                  className="custom-input"
-                  placeholder="รหัสกระทรวงพาณิชย์" />
-              </div>
-
-              {/* Item Status */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
                 <select value={filters.unitId}
@@ -455,7 +436,7 @@ export default function BudgetApp() {
             <table className="modern-table w-full text-black">
               <thead className="bg-gray-50/50">
                 <tr>
-                  {["", "No.", "รหัส", "ปี", "ประเภท", "รายการ"].map((h) => (
+                  {["", "No.", "รหัส", "ปี", "ประเภท", "รายการ", "สถานะ"].map((h) => (
                     <th key={h} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                       {h}
                     </th>
@@ -506,10 +487,15 @@ export default function BudgetApp() {
                       <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_code}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_code}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.fiscal}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_type}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_name}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_type}</td>
+                      <td className="px-6 py-4 align-middle texst-sm text-gray-900">{item.item_name}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900">
+                        <div className={item.status === 'T' ? 'active-badge' : 'inactive-badge'}>
+                          { item.status == 'T' ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -532,7 +518,7 @@ export default function BudgetApp() {
         <Modal
           show={showDialog}
           onClose={() => setShowDialog(false)}
-          title={isEditMode ? "แก้ไขวัสดุ" : "เพิ่มวัสดุ"}
+          title={isEditMode ? "แก้ไขแรงงาน" : "เพิ่มแรงงาน"}
           footer={
             <>
               <button type="button" onClick={() => setShowDialog(false)} style={{ width: "100px" }}

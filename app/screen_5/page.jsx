@@ -377,7 +377,7 @@ export default function BudgetApp() {
     <div className="bg-gray-50 min-h-screen center-template">
       <div className="container mx-auto px-6 py-6">
 
-        <div className="text-black text-2xl font-medium mb-3">หัวข้อรายการ</div>
+        <div className="text-black text-2xl font-medium mb-3">รายการพิจารณา</div>
 
         {/* Filter Section */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
@@ -390,14 +390,9 @@ export default function BudgetApp() {
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end space-x-4">
-            <button onClick={() => loadData(filters)}
-              className="button-primary-border">
-              <IconRefresh />Refresh
-            </button>
-
-            <button onClick={openNewDialog}
+            <button
               className="button-primary">
-              <IconAdd />เพิ่มข้อมูล
+              ส่งออกรายงาน
             </button>
 
             <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
@@ -489,15 +484,6 @@ export default function BudgetApp() {
                               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                             <span>แก้ไขรายการ</span>
-                          </button>
-
-                          <button
-                            className="kebab-menu-item w-full text-red-500 hover:bg-red-50"
-                            onClick={() => deleteSelected(item.UID)}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
-                              <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                            </svg>
-                            <span>ลบรายการ</span>
                           </button>
                         </KebabMenu>
                       </td>
