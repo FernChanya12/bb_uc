@@ -144,6 +144,7 @@ export default function Screen4Page() {
   const [editingBoqUid, setEditingBoqUid] = useState(null);
   const [boqForm, setBoqForm] = useState({ boq_name: "", boq_detail: "", boq_group: "", status: "T", remark: "" });
   const [constructionGroups, setConstructionGroups] = useState(initialConstructionGroups);
+  const [rootItems, setRootItems] = useState([]);
   const [selectedTreeNode, setSelectedTreeNode] = useState(null);
   const [addChoiceGroupId, setAddChoiceGroupId] = useState(null);
 
@@ -270,6 +271,7 @@ export default function Screen4Page() {
     setConstructionName("");
     setBoqForm({ boq_name: "", boq_detail: "", boq_group: "", status: "T", remark: "" });
     setConstructionGroups([]);
+    setRootItems([]);
     setSelectedTreeNode(null);
     setEditingBoqUid(null);
     setShowConstructionPopup(true);
@@ -478,6 +480,20 @@ export default function Screen4Page() {
   };
 
   const updateItemQuantity = (groupId, itemId, quantity) => {
+    if (groupId === "__root__") {
+      setRootItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== itemId) return item;
+          return {
+            ...item,
+            quantity,
+            materialTotal: quantity * item.materialPricePerUnit,
+            laborTotal: quantity * item.laborPricePerUnit,
+          };
+        })
+      );
+      return;
+    }
     const update = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) {
@@ -530,6 +546,10 @@ export default function Screen4Page() {
       laborPricePerUnit: laborPrice,
       laborTotal: 0,
     };
+    if (groupId === "__root__") {
+      setRootItems((prev) => [...prev, newEntry]);
+      return;
+    }
     const addToGroup = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) return { ...g, items: [...g.items, newEntry] };
@@ -540,9 +560,13 @@ export default function Screen4Page() {
 
   const confirmAddGroup = (groupId) => {
     setAddChoiceGroupId(null);
-    const name = prompt("ชื่อกลุ่มย่อยใหม่:");
+    const name = prompt("ชื่อกลุ่มใหม่:");
     if (!name) return;
     const newGroup = { id: "g" + Date.now(), name, expanded: true, items: [], subGroups: [] };
+    if (groupId === "__root__") {
+      setConstructionGroups((prev) => [...prev, newGroup]);
+      return;
+    }
     const addToGroup = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) return { ...g, subGroups: [...(g.subGroups || []), newGroup] };
@@ -554,7 +578,7 @@ export default function Screen4Page() {
   // construction computed values
   const flattenGroupItems = (groups) =>
     groups.flatMap((g) => [...g.items, ...flattenGroupItems(g.subGroups || [])]);
-  const allConstructionItems = flattenGroupItems(constructionGroups);
+  const allConstructionItems = [...rootItems, ...flattenGroupItems(constructionGroups)];
 
   const findGroupById = (groups, id) => {
     for (const g of groups) {
@@ -1095,10 +1119,26 @@ export default function Screen4Page() {
                     <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>
                     <span className="text-sm font-medium text-blue-700">{constructionName}</span>
                   </div>
-                  <button className=" hover:text-blue-600 p-0.5" onClick={() => addItemToGroup()} title="เพิ่มกลุ่ม">
+                  <button className=" hover:text-blue-600 p-0.5" onClick={() => setAddChoiceGroupId("__root__")} title="เพิ่มกลุ่ม/รายการ">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                   </button>
                 </div>
+
+                {/* Root items */}
+                {rootItems.length > 0 && (
+                  <div className="ml-5">
+                    {rootItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`flex items-center gap-1 py-0.5 cursor-pointer text-sm hover:text-blue-600 ${selectedTreeNode === item.id ? "text-blue-700 font-medium" : "text-gray-600"}`}
+                        onClick={() => setSelectedTreeNode(item.id)}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        {item.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Groups */}
                 {constructionGroups.map((group) => renderGroup(group, 0))}
@@ -1140,48 +1180,44 @@ export default function Screen4Page() {
                         <th className="px-3 py-2 text-center font-medium">จำนวน</th>
                         <th className="px-3 py-2 text-center font-medium">หน่วย</th>
                         <th className="px-3 py-2 text-center font-medium">ราคาวัสดุ/หน่วย</th>
-                        <th className="px-3 py-2 text-center font-medium">ค่าวัสดุ (จำนวนเงิน)</th>
+                        <th className="px-3 py-2 text-center font-medium">ค่าวัสดุ</th>
                         <th className="px-3 py-2 text-center font-medium">ค่าแรง/หน่วย</th>
-                        <th className="px-3 py-2 text-center font-medium">ค่าแรง (จำนวนเงิน)</th>
+                        <th className="px-3 py-2 text-center font-medium">ค่าแรง</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {(() => {
                         let rowNum = 0;
+                        const makeRow = (item, gId) => {
+                          rowNum++;
+                          return (
+                            <tr key={item.id} className="hover:bg-yellow-50 transition-colors">
+                              <td className="px-3 py-2.5 text-center ">{rowNum}</td>
+                              <td className="px-3 py-2.5 text-gray-700">{item.code}</td>
+                              <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
+                              <td className="px-3 py-2.5 text-center ">
+                                <input
+                                  type="number"
+                                  className="w-20 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItemQuantity(gId, item.id, Number(e.target.value) || 0)}
+                                />
+                              </td>
+                              <td className="px-3 py-2.5 text-center ">{item.unit}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.materialPricePerUnit)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.materialTotal)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.laborPricePerUnit)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.laborTotal)}</td>
+                            </tr>
+                          );
+                        };
                         const renderRows = (groups) =>
                           groups.flatMap((group) => [
-                            ...group.items.map((item) => {
-                              rowNum++;
-                              return (
-                                <tr key={item.id} className="hover:bg-yellow-50 transition-colors">
-                                  <td className="px-3 py-2.5 text-center ">{rowNum}</td>
-                                  <td className="px-3 py-2.5 text-gray-700">{item.code}</td>
-                                  <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
-                                  <td className="px-3 py-2.5 text-center ">
-                                    <input
-                                      type="number"
-                                      className="w-20 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                      value={item.quantity}
-                                      onChange={(e) =>
-                                        updateItemQuantity(
-                                          group.id,
-                                          item.id,
-                                          Number(e.target.value) || 0
-                                        )
-                                      }
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2.5 text-center ">{item.unit}</td>
-                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.materialPricePerUnit)}</td>
-                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.materialTotal)}</td>
-                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.laborPricePerUnit)}</td>
-                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.laborTotal)}</td>
-                                </tr>
-                              );
-                            }),
+                            ...group.items.map((item) => makeRow(item, group.id)),
                             ...renderRows(group.subGroups || []),
                           ]);
-                        return renderRows(displayGroups);
+                        const rootRows = !selectedGroup ? rootItems.map((item) => makeRow(item, "__root__")) : [];
+                        return [...rootRows, ...renderRows(displayGroups)];
                       })()}
                     </tbody>
                   </table>
