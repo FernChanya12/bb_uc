@@ -10,7 +10,7 @@ import Swal from "sweetalert2";
 const BASE_URL = "http://localhost:3000/api";
 
 const ApiService = {
-  callScreen1: (params) => {
+  callData: (params) => {
     const query = new URLSearchParams(params).toString();
     return fetch(`${BASE_URL}/ucItem?${query}`).then((r) => r.json());
   },
@@ -195,7 +195,7 @@ export default function BudgetApp() {
       if (f.item_name) params.item_name = f.item_name;
       if (f.unitId) params.unitId = f.unitId;
 
-      const res = await ApiService.callScreen1(params);
+      const res = await ApiService.callData(params);
       if (res) {
         setItems(res);
         setCurrentPage(1);
