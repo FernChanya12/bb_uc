@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Pagination from "@/app/components/pagination"; 
 import KebabMenu from "@/app/components/kebabMenu";
+import { FilterDrawer } from "../components/filter-slide";
+import { SearchInput } from "../components/search-input";
 const API_BASE = "http://localhost:3000/api";
 
 const emptyFilters = {
@@ -50,6 +52,20 @@ const initialConstructionGroups = [
     subGroups: [],
   },
 ];
+
+const IconRefresh = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>
+);
+
+const IconTrash = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
 
 const formatNumber = (n) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -461,6 +477,29 @@ export default function Screen4Page() {
     setConstructionGroups((prev) => addToGroup(prev));
   };
 
+  const openNewDialog = () => {
+    setIsEditMode(false);
+    setEditingUid(null);
+    setFormItem(EMPTY_ITEM);
+    setShowDialog(true);
+  };
+  const IconFilter = () => (
+    <svg
+      width="1em" height="1em" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "inline-block", verticalAlign: "middle" }}
+    >
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+    </svg>
+  );
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const IconAdd = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
   const confirmAddGroup = (groupId) => {
     setAddChoiceGroupId(null);
     const name = prompt("ชื่อกลุ่มย่อยใหม่:");
@@ -546,403 +585,182 @@ export default function Screen4Page() {
   return (
     <>
       {/* ---------- inline styles for custom dropdown ---------- */}
-      <style jsx global>{`
-        .custom-dropdown {
-          position: relative;
-          font-family: 'Prompt', sans-serif;
-        }
-        .custom-dropdown-trigger {
-          width: 100%;
-          padding: 0.625rem 2.5rem 0.625rem 1rem;
-          margin-right: 10px;
-          border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          background-color: white;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-size: 0.875rem;
-          transition: all 0.2s;
-        }
-        .custom-dropdown-trigger:hover {
-          border-color: #9ca3af;
-        }
-        .custom-dropdown-trigger:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        .custom-dropdown-icon {
-          position: absolute;
-          right: 0;
-          top: 0;
-          bottom: 0;
-          width: 2.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-        }
-        .custom-dropdown-icon::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 1px;
-          background-color: #d1d5db;
-        }
-        .custom-dropdown-menu {
-          position: absolute;
-          top: calc(100% + 4px);
-          left: 0;
-          right: 0;
-          background-color: white;
-          border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-            0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          z-index: 50;
-          max-height: 240px;
-          overflow-y: auto;
-        }
-        .custom-dropdown-option {
-          padding: 0.625rem 1rem;
-          cursor: pointer;
-          font-size: 0.875rem;
-          color: #374151;
-          transition: background-color 0.15s;
-        }
-        .custom-dropdown-option:hover {
-          background-color: #e0f2fe;
-        }
-        .custom-dropdown-option:first-child {
-          border-top-left-radius: 0.5rem;
-          border-top-right-radius: 0.5rem;
-        }
-        .custom-dropdown-option:last-child {
-          border-bottom-left-radius: 0.5rem;
-          border-bottom-right-radius: 0.5rem;
-        }
-        .custom-dropdown-option.selected {
-          background-color: #dbeafe;
-          font-weight: 500;
-        }
-        .custom-checkbox {
-          appearance: none;
-          width: 1rem;
-          height: 1rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.25rem;
-          background-color: #f3f4f6;
-          background-size: 0.55em 0.55em;
-          background-position: center;
-          background-repeat: no-repeat;
-          cursor: pointer;
-        }
-        .custom-checkbox:checked {
-          border-color: transparent;
-          background-color: rgb(37, 99, 235);
-          background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
-        }
-        .custom-checkbox:focus {
-          outline: none;
-        }
-      `}</style>
+  
 
       <div className="bg-gray-50 min-h-screen">
         {/* Main Content */}
         <div className="container mx-auto px-6 py-6">
           {/* Filter Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex gap-4 mb-4">
-              {/* รหัสงาน */}
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  รหัสงาน
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="รหัสงาน..."
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={filters.jobCode}
-                    onChange={(e) =>
-                      setFilters((f) => ({ ...f, jobCode: e.target.value }))
-                    }
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2  pointer-events-none">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-
-              {/* รายการงาน */}
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  รายการงาน
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="รายการงาน..."
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={filters.jobDescription}
-                    onChange={(e) =>
-                      setFilters((f) => ({
-                        ...f,
-                        jobDescription: e.target.value,
-                      }))
-                    }
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2  pointer-events-none">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-
-              {/* หน่วย */}
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  หน่วย
-                </label>
-                <CustomDropdown
-                  options={units}
-                  value={filters.unit}
-                  placeholder="ค้นหา..."
-                  isOpen={openDropdown === "filterUnit"}
-                  onToggle={() => toggleDropdown("filterUnit")}
-                  onSelect={(v) => {
-                    setFilters((f) => ({ ...f, unit: v }));
-                    setOpenDropdown(null);
-                  }}
-                />
-              </div>
-
-              {/* วัสดุ */}
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  วัสดุ
-                </label>
-                <CustomDropdown
-                  options={materials}
-                  value={filters.material}
-                  placeholder="ค้นหา..."
-                  isOpen={openDropdown === "filterMaterial"}
-                  onToggle={() => toggleDropdown("filterMaterial")}
-                  onSelect={(v) => {
-                    setFilters((f) => ({ ...f, material: v }));
-                    setOpenDropdown(null);
-                  }}
-                />
-              </div>
-            </div>
-
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
+  
+            <SearchInput
+              value={filters.searchText}
+              onSearch={(val) => loadData(filters)}
+              placeholder="ค้นหารายการ..."
+            />
+  
             {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-4">
-              <button
-                className="px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2"
-                onClick={clearFilters}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                <span>Clear</span>
+              <button onClick={() => loadData(filters)}
+                className="button-primary-border">
+                <IconRefresh />Refresh
               </button>
-
-              <button
-                className="px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2"
-                onClick={refreshData}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                <span>Refresh</span>
+  
+              <button onClick={deleteSelected} disabled={selectedItems.size === 0}
+                className="button-primary-border">
+                <IconTrash />ลบที่เลือก ({selectedItems.size})
               </button>
-
-              <button
-                className={`px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2 ${
-                  selectedItems.length === 0
-                    ? " opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-                disabled={selectedItems.length === 0}
-                onClick={deleteSelected}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                <span>ลบที่เลือก ({selectedItems.length})</span>
+  
+              <button onClick={openNewDialog}
+                className="button-primary">
+                <IconAdd />เพิ่มข้อมูล
               </button>
-
-              <button
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-                onClick={openNew}
-              >
-                <span className="text-xl font-light">+</span>
-                <span>New</span>
+  
+              <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
+                <IconFilter />
+                ตัวกรอง
               </button>
             </div>
+  
+            <FilterDrawer
+              open={drawerOpen}
+              onClose={() => setDrawerOpen(false)}
+              onSearch={clearFilters}
+              onClear={clearFilters}
+            >
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
+                  <input type="text" value={filters.name}
+                    onChange={(e) => handleFilterChange("name", e.target.value)}
+                    className="custom-input"
+                    placeholder="วัสดุ..." />
+                </div>
+  
+                {/* GFMIS */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
+                  <input type="text" value={filters.gfmis}
+                    onChange={(e) => handleFilterChange("gfmis", e.target.value)}
+                    className="custom-input"
+                    placeholder="รหัสกระทรวงพาณิชย์" />
+                </div>
+  
+                {/* Item Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
+                  <select value={filters.unitId}
+                    onChange={(e) => handleFilterChange("unitId", e.target.value)}
+                    className="custom-input"
+                    placeholder="ค้นหา">
+                    <option value="">-- ทั้งหมด --</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+            </FilterDrawer>
           </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 md:p-6">
-              <div className="overflow-x-auto">
-                <table className="modern-table w-full">
-                  <thead className="bg-gray-50/50">
-                    <tr>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
-                      <th className="px-6 py-3">
-                        <div className="flex justify-center">
-                          <input
-                            type="checkbox"
-                            className="custom-checkbox"
-                            checked={selectAll}
-                            onChange={handleToggleSelectAll}
-                          />
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-center">ลำดับ</th>
-                      <th className="px-6 py-3 text-center">รหัสรายการ</th>
-                      <th className="px-6 py-3 text-center">รายการ</th>
-                      <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
-                      <th className="px-6 py-3 text-center">ประเภท</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {pagedItems.map((item, idx) => {
-                      // ใช้ itemId ที่ไม่ซ้ำกันแน่นอน
-                      const itemId = item.uid || item.code || `row-${idx}`;
-                      const globalIdx = (currentPage - 1) * itemsPerPage + idx;
-
-                      return (
-                        <tr
-                          key={itemId}
-                          className="modern-table-row hover:bg-gray-50/50 transition-colors"
-                          // ลบ onClick และ onDoubleClick ออกจากตรงนี้แล้วค่ะ
-                        >
-                          {/* 1. คอลัมน์ Kebab Menu */}
-                          <td className="px-4 py-4 text-center">
-                            <KebabMenu
-                              itemId={itemId}
-                              activeMenu={activeMenu}
-                              setActiveMenu={setActiveMenu}
-                            >
-                              <button 
-                                className="kebab-menu-item w-full" 
-                                onClick={() => handleEdit(item.uid)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye text-blue-500" viewBox="0 0 16 16">
-                                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                                </svg> 
-                                <span>ดูรายละเอียด</span>
-                              </button>
-
-                              <button 
-                                className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
-                                onClick={() => handleDelete(item.uid)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
-                                  <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                </svg> 
-                                <span>ลบรายการ</span>
-                              </button>
-                            </KebabMenu>
-                          </td>
-
-                          {/* 2. Checkbox */}
-                          <td className="px-6 py-4 text-center">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-4 md:p-6">
+                <div className="overflow-x-auto">
+                  <table className="modern-table w-full">
+                    <thead className="bg-gray-50/50">
+                      <tr>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
+                        <th className="px-6 py-3">
+                          <div className="flex justify-center">
                             <input
                               type="checkbox"
                               className="custom-checkbox"
-                              checked={item.selected || false}
-                              onChange={() => handleItemSelect(globalIdx)}
+                              checked={selectAll}
+                              onChange={handleToggleSelectAll}
                             />
-                          </td>
+                          </div>
+                        </th>
+                        <th className="px-6 py-3 text-center">ลำดับ</th>
+                        <th className="px-6 py-3 text-center">รหัสรายการ</th>
+                        <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
+                        <th className="px-6 py-3 text-center">รายการ</th>
+                        <th className="px-6 py-3 text-center">สถานะ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {pagedItems.map((item, idx) => {
+                        const itemId = item.uid || item.code || `row-${idx}`;
+                        const globalIdx = (currentPage - 1) * itemsPerPage + idx;
 
-                          {/* 3. ข้อมูลอื่นๆ */}
-                          <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
-                          <td className="px-6 py-4">{item.code}</td>
-                          <td className="px-6 py-4 font-medium text-gray-700">{item.description}</td>
-                          <td className="px-6 py-4 text-center">{item.year}</td>
-                          <td className="px-6 py-4">
-                            <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
-                              {item.type}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        return (
+                          <tr
+                            key={itemId}
+                            className="modern-table-row hover:bg-gray-50/50 transition-colors"
+                          >
+                            <td className="px-4 py-4 text-center">
+                              <KebabMenu
+                                itemId={itemId}
+                                activeMenu={activeMenu}
+                                setActiveMenu={setActiveMenu}
+                              >
+                                <button 
+                                  className="kebab-menu-item w-full" 
+                                  onClick={() => handleEdit(item.uid)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye text-blue-500" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                  </svg> 
+                                  <span>ดูรายละเอียด</span>
+                                </button>
+
+                                <button 
+                                  className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
+                                  onClick={() => handleDelete(item.uid)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
+                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                  </svg> 
+                                  <span>ลบรายการ</span>
+                                </button>
+                              </KebabMenu>
+                            </td>
+
+                            <td className="px-6 py-4 text-center">
+                              <input
+                                type="checkbox"
+                                className="custom-checkbox"
+                                checked={item.selected || false}
+                                onChange={() => handleItemSelect(globalIdx)}
+                              />
+                            </td>
+
+                            <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
+                            <td className="px-6 py-4">{item.code}</td>
+                            <td className="px-6 py-4">{item.year}</td>
+                            <td className="px-6 py-4 font-medium text-gray-700">{item.description}</td>
+                            <td className="px-6 py-4">
+                              <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
+                                {item.type}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                changeItemsPerPage={changeItemsPerPage}
+                goToPage={goToPage}
+              />
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              changeItemsPerPage={changeItemsPerPage}
-              goToPage={goToPage}
-            />
           </div>
-        </div>
       </div>
 
       {/* ═══════ Construction Popup ═══════ */}
