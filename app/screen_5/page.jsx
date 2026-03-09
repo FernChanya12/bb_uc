@@ -17,21 +17,34 @@ const ApiService = {
   getDetailByUid: (uid) => {
     return fetch(`${BASE_URL}/boqApproving/detail?${uid}`).then((r) => r.json());
   },
-  createItem: (data) =>
-    fetch(`${BASE_URL}/boqApproving`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }).then((r) => r.json()),
-  updateItem: (data) =>
-    fetch(`${BASE_URL}/boqApproving`, {
+  aprove: (data) =>
+    fetch(`${BASE_URL}/boqApproving/aprove`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        created_by: 'admin',
+      }),
     }).then((r) => r.json()),
-  deleteItem: (uid) =>
-    fetch(`${BASE_URL}/boqApproving?UID=${uid}`, {
-      method: "DELETE",
+  reject: (data) =>
+    fetch(`${BASE_URL}/boqApproving/inapprove`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        reason: data.remark,
+        created_by: 'admin',
+      }),
+    }).then((r) => r.json()),
+  sendback: (data) =>
+    fetch(`${BASE_URL}/boqApproving/return`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        reason: data.remark,
+        created_by: 'admin',
+      }),
     }).then((r) => r.json()),
 };
 
@@ -208,7 +221,7 @@ export default function BudgetApp() {
 
       const res = await ApiService.getDetailByUid(uid);
       if (res) {
-        setItemsDetail(res.boq_header);
+        setItemsDetail(res.boq_item);
         setCurrentPage(1);
         setShowTable(false);
         setShowDetail(true);
@@ -254,28 +267,17 @@ export default function BudgetApp() {
     );
   };
 
-  const saveItem = async () => {
-    if (!formItem.header_name) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก ชื่อวัสดุ", "warning");
+  const onApprove = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
       return;
     }
-
-    if (!formItem.unitId) {
-      Swal.fire("แจ้งเตือน", "กรุณาเลือก UOM", "warning");
-      return;
-    }
-
-    if (!formItem.header_code) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก รหัสกระทรวงพาณิชย์", "warning");
-      return;
-    }
-
     const result = await Swal.fire({
-      title: "ยืนยันการบันทึก",
-      text: "ต้องการบันทึกข้อมูลนี้หรือไม่?",
+      title: "ยืนยันการอนุมัติ",
+      text: "ต้องการอนุมัติข้อมูลนี้หรือไม่?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "บันทึก",
+      confirmButtonText: "ยืนยัน",
       cancelButtonText: "ยกเลิก",
       buttonsStyling: false,
       customClass: {
@@ -287,52 +289,121 @@ export default function BudgetApp() {
     if (result.isConfirmed) {
       setIsLoading(true);
       try {
-        const res = isEditMode
-          ? await ApiService.updateItem({ UID: editingUid, ...formItem })
-          : await ApiService.createItem(formItem);
-
+        const param = {
+          selectedUids: selectedUids,
+        }
+        const res = await ApiService.reject(param);
         if (res) {
-          Swal.fire("สำเร็จ!", "บันทึกข้อมูลสำเร็จ", "success");
-          loadData(filters);
+          Swal.fire("สำเร็จ!", "ไม่อนุมัติข้อมูลสำเร็จ", "success");
+          setSelectedUids(new Set());
+          getDetail();
         } else {
           Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
         }
       } catch {
-        Swal.fire("ผิดพลาด!", isEditMode ? "ไม่สามารถแก้ไขข้อมูลได้" : "ไม่สามารถบันทึกข้อมูลได้", "error");
+        Swal.fire("ผิดพลาด!", "ไม่สามารถไม่อนุมัติข้อมูลข้อมูลได้", "error");
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  const deleteSelected = async (uid) => {
-    const result = await Swal.fire({
-      title: "ยืนยันการลบ",
-      text: "ต้องการลบข้อมูลนี้หรือไม่?",
-      icon: "warning",
+  const onReject = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
+      return;
+    }
+
+    const { value, isConfirmed } = await Swal.fire({
+      title: 'ไม่อนุมัติ',
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'ระบุเหตุผล',
+      inputPlaceholder: 'ระบุเหตุผล',
+      inputAttributes: { required: true },
       showCancelButton: true,
-      confirmButtonText: "ยืนยัน",
-      cancelButtonText: "ยกเลิก",
-      buttonsStyling: false,  // ปิด style default ของ Swal
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false,
       customClass: {
         confirmButton: "sweet-confirm mr-2",
         cancelButton: "sweet-cancel",
+        inputLabel: 'sweet-input-label',
+      },
+      preConfirm: (val) => {
+        if (!val) Swal.showValidationMessage('กรุณาระบุเหตุผล');
+        return val;
       },
     });
 
-    if (result.isConfirmed) {
+    if (isConfirmed && value) {
       setIsLoading(true);
       try {
-        const res = await ApiService.deleteItem(uid);
+        const param = {
+          selectedUids: selectedUids,
+          remark: value
+        }
+        const res = await ApiService.reject(param);
         if (res) {
-          Swal.fire("สำเร็จ!", "ลบข้อมูลสำเร็จ", "success");
+          Swal.fire("สำเร็จ!", "ไม่อนุมัติข้อมูลสำเร็จ", "success");
           setSelectedUids(new Set());
-          loadData(filters);
+          getDetail();
         } else {
           Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
         }
       } catch {
-        Swal.fire("ผิดพลาด!", "ไม่สามารถลบข้อมูลได้", "error");
+        Swal.fire("ผิดพลาด!", "ไม่สามารถไม่อนุมัติข้อมูลข้อมูลได้", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const onSendBack = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
+      return;
+    }
+
+    const { value, isConfirmed } = await Swal.fire({
+      title: 'ส่งกลับแก้ไข',
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'ระบุเหตุผล',
+      inputPlaceholder: 'ระบุเหตุผล',
+      inputAttributes: { required: true },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false,
+      customClass: {
+        confirmButton: "sweet-confirm mr-2",
+        cancelButton: "sweet-cancel",
+        inputLabel: 'sweet-input-label',
+      },
+      preConfirm: (val) => {
+        if (!val) Swal.showValidationMessage('กรุณาระบุเหตุผล');
+        return val;
+      },
+    });
+
+    if (isConfirmed && value) {
+      setIsLoading(true);
+      try {
+        const param = {
+          selectedUids: selectedUids,
+          remark: value
+        }
+        const res = await ApiService.sendback(param);
+        if (res) {
+          Swal.fire("สำเร็จ!", "ส่งกลับแก้ไขข้อมูลสำเร็จ", "success");
+          setSelectedUids(new Set());
+          getDetail();
+        } else {
+          Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
+        }
+      } catch {
+        Swal.fire("ผิดพลาด!", "ไม่สามารถส่งกลับแก้ไขข้อมูลได้", "error");
       } finally {
         setIsLoading(false);
       }
@@ -362,6 +433,7 @@ export default function BudgetApp() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const backTotable = () => {
+    loadData();
     setShowTable(true);
     setShowDetail(false);
   }
@@ -451,14 +523,14 @@ export default function BudgetApp() {
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-4">
-              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => setDrawerOpen(true)}>
+              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => onSendBack(true)}>
                 ส่งกลับแก้ไข
               </button>
-              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => setDrawerOpen(true)}>
+              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => onReject(true)}>
                 ไม่อนุมัติ
               </button>
               <button
-                className="button-primary" style={{ width: "120px" }}>
+                className="button-primary" style={{ width: "120px" }} onClick={() => onApprove(true)}>
                 อนุมัติ
               </button>
             </div>
@@ -556,7 +628,7 @@ export default function BudgetApp() {
               <table className="modern-table w-full text-black">
                 <thead className="bg-gray-50/50">
                   <tr>
-                    {[<input
+                    {[<input className="custom-checkbox"
                       type="checkbox"
                       checked={allSelected}
                       onChange={handleCheckAll}
@@ -582,23 +654,25 @@ export default function BudgetApp() {
                         className={`cursor-pointer transition-colors hover:bg-yellow-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
                       >
                         <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedUids.includes(item.UID)}
-                            onChange={() => handleCheck(item.UID)}
-                          />
+                          <div className="grid place-content-center">
+                            <input className="custom-checkbox"
+                              type="checkbox"
+                              checked={selectedUids.includes(item.UID)}
+                              onChange={() => handleCheck(item.UID)}
+                            />
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
                           {(currentPageDetail - 1) * itemsPerPageDetail + idx + 1}
                         </td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.boq_type}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_code}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_type}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.remark}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.price}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.status}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.approveStatus}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.total}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.updated_by}</td>
                       </tr>
                     ))
                   )}
