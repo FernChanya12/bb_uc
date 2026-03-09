@@ -478,35 +478,18 @@ export default function BudgetApp() {
               onSearch={searchFilter}
               onClear={clearFilters}
             >
-              <div className="grid grid-cols-1 gap-4 mb-6">
+              <div className="grid grid-cols-1 gap-4 mb-6">           
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
-                  <input type="text" value={filters.header_name}
-                    onChange={(e) => handleFilterChange("header_name", e.target.value)}
-                    className="custom-input"
-                    placeholder="วัสดุ..." />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
-                  <input type="text" value={filters.header_code}
-                    onChange={(e) => handleFilterChange("header_code", e.target.value)}
-                    className="custom-input"
-                    placeholder="รหัสกระทรวงพาณิชย์" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">สถานะการอนุมัติ</label>
                   <select value={filters.unitId}
-                    onChange={(e) => handleFilterChange("unitId", e.target.value)}
+                    onChange={(e) => handleFilterChange("status", e.target.value)}
                     className="custom-input"
                     placeholder="ค้นหา">
                     <option value="">ทั้งหมด</option>
-                    {unitList.map((unit) => (
-                      <option key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </option>
-                    ))}
+                    <option value="S">รอพิจารณา</option>
+                    <option value="A">อนุมัติ</option>
+                    <option value="R">ส่งกลับแก้ไข</option>
+                    <option value="W">รอรับทราบ</option>
                   </select>
                 </div>
               </div>
