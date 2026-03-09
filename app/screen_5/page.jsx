@@ -639,7 +639,7 @@ export default function BudgetApp() {
                         <td>
                           <div className="grid place-content-center">
                             <input className="custom-checkbox"
-                              type="checkbox"
+                              type="checkbox" disabled={item.status != "S"}
                               checked={selectedUids.includes(item.UID)}
                               onChange={() => handleCheck(item.UID)}
                             />
