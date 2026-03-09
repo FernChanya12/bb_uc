@@ -1,0 +1,171 @@
+{
+  "uc_boq": [
+    {
+      "UID": "BOQ004",
+      "fiscal": "2568",
+      "boq_name": "BOQ งานถนน",
+      "boq_detail": "ประมาณราคางานก่อสร้างถนน",
+      "report_id": "RPT001",
+      "UID_PARENT": null,
+      "status": "S",
+      "remark": null,
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "BOQ005",
+      "fiscal": "2568",
+      "boq_name": "BOQ งานระบายน้ำ",
+      "boq_detail": "ประมาณราคางานระบบระบายน้ำ",
+      "report_id": "RPT001",
+      "UID_PARENT": null,
+      "status": "S",
+      "remark": null,
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    }
+  ],
+
+  "boq_header": [
+    {
+      "UID": "HDR006",
+      "fiscal": "2568",
+      "header_code": "H006",
+      "UID_PARENT": "BOQ004",
+      "UID_UPLEVEL": null,
+      "status": "S",
+      "remark": "หมวดงานดิน",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "HDR007",
+      "fiscal": "2568",
+      "header_code": "H007",
+      "UID_PARENT": "BOQ004",
+      "UID_UPLEVEL": null,
+      "status": "S",
+      "remark": "หมวดงานผิวจราจร",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "HDR008",
+      "fiscal": "2568",
+      "header_code": "H008",
+      "UID_PARENT": "BOQ005",
+      "UID_UPLEVEL": null,
+      "status": "S",
+      "remark": "หมวดท่อระบายน้ำ",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    }
+  ],
+
+  "boq_item": [
+    {
+      "UID": "IT009",
+      "fiscal": "2568",
+      "UID_PARENT": "HDR006",
+      "item_code": "ITEM009",
+      "UID_UPLEVEL": null,
+      "price": 2500,
+      "status": "S",
+      "remark": "งานขุดดิน",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "IT010",
+      "fiscal": "2568",
+      "UID_PARENT": "HDR006",
+      "item_code": "ITEM010",
+      "UID_UPLEVEL": "IT009",
+      "price": 800,
+      "status": "S",
+      "remark": "ค่าแรงขุดดิน",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "IT011",
+      "fiscal": "2568",
+      "UID_PARENT": "HDR007",
+      "item_code": "ITEM011",
+      "UID_UPLEVEL": null,
+      "price": 3200,
+      "status": "S",
+      "remark": "งานลาดยาง",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    },
+    {
+      "UID": "IT012",
+      "fiscal": "2568",
+      "UID_PARENT": "HDR008",
+      "item_code": "ITEM012",
+      "UID_UPLEVEL": null,
+      "price": 2100,
+      "status": "S",
+      "remark": "ท่อคอนกรีตระบายน้ำ",
+      "created_by": "admin",
+      "created_date": "2026-03-09 14:00:00",
+      "updated_by": "admin",
+      "updated_date": "2026-03-09 14:00:00"
+    }
+  ],
+  "boq_approve_log": [
+    {
+      "UID": "LOG001",
+      "boq_id": "BOQ004",
+      "report_id": "RPT001",
+      "status": "P",
+      "reason": null,
+      "remark": "ส่งตรวจสอบ BOQ งานถนน",
+      "created_date": "2026-03-09 14:10:00",
+      "created_by": "admin",
+      "updated_date": "2026-03-09 14:10:00",
+      "updated_by": "admin"
+    },
+    {
+      "UID": "LOG002",
+      "boq_id": "BOQ004",
+      "report_id": "RPT002",
+      "status": "A",
+      "reason": null,
+      "remark": "อนุมัติ BOQ งานถนน",
+      "created_date": "2026-03-09 14:20:00",
+      "created_by": "auditor1",
+      "updated_date": "2026-03-09 14:20:00",
+      "updated_by": "auditor1"
+    },
+    {
+      "UID": "LOG003",
+      "boq_id": "BOQ005",
+      "report_id": "RPT003",
+      "status": "P",
+      "reason": null,
+      "remark": "ส่งตรวจสอบ BOQ งานระบายน้ำ",
+      "created_date": "2026-03-09 14:15:00",
+      "created_by": "admin",
+      "updated_date": "2026-03-09 14:15:00",
+      "updated_by": "admin"
+    }
+  ]
+}

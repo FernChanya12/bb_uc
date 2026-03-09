@@ -119,7 +119,6 @@ export default function Screen4Page() {
 
   const [materials, setMaterials] = useState([]);
   const [laborTypes, setLaborTypes] = useState([]);
-  const [boqGroups, setBoqGroups] = useState([]);
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -140,21 +139,20 @@ export default function Screen4Page() {
 
   // construction popup
   const [showConstructionPopup, setShowConstructionPopup] = useState(false);
-  const [constructionName, setConstructionName] = useState("");
-  const [editingBoqUid, setEditingBoqUid] = useState(null);
-  const [boqForm, setBoqForm] = useState({ boq_name: "", boq_detail: "", boq_group: "", status: "T", remark: "" });
+  const [constructionName] = useState("บ้านพักข้าราชการ-6");
   const [constructionGroups, setConstructionGroups] = useState(initialConstructionGroups);
-  const [rootItems, setRootItems] = useState([]);
   const [selectedTreeNode, setSelectedTreeNode] = useState(null);
   const [addChoiceGroupId, setAddChoiceGroupId] = useState(null);
 
-  // server-side pagination
-  const [totalItems, setTotalItems] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-
   // derived
+  const totalItems = items.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const selectedItems = items.filter((i) => i.selected);
+
+  const pagedItems = items.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   /* ───── helpers ───── */
   const getLabel = (list, value) =>
@@ -180,76 +178,84 @@ export default function Screen4Page() {
       setUnits(rawUnits.map((u) => ({ value: u.UID, label: u.unit_name })));
       if (data.materials) setMaterials(data.materials);
       if (data.laborTypes) setLaborTypes(data.laborTypes);
-
-      // load boq groups
-      const grpRes = await fetch(`${API_BASE}/selectionGroup`);
-      const grpData = await grpRes.json();
-      const rawGroups = Array.isArray(grpData) ? grpData : [];
-      setBoqGroups(rawGroups.map((g) => ({ value: g.value, label: g.label })));
     } catch (err) {
       console.error("Error loading selections:", err);
     }
   }, []);
 
-  const loadWorkItems = useCallback(async (page = currentPage, limit = itemsPerPage) => {
-    setIsLoading(true);
+  const loadWorkItems = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      params.set("page", page);
-      params.set("limit", limit);
       if (filters.fiscal) params.set("fiscal", filters.fiscal);
-      if (filters.jobDescription) params.set("boq_name", filters.jobDescription);
-      if (filters.jobCode) params.set("boq_group", filters.jobCode);
+      const search = filters.jobCode || filters.jobDescription;
+      if (search) params.set("search", search);
 
-      const res = await fetch(`${API_BASE}/boq?${params.toString()}`);
-      const json = await res.json();
+      const qs = params.toString();
+      const url = `${API_BASE}/screen3.php${qs ? "?" + qs : ""}`;
+      const res = await fetch(url);
+      const data = await res.json();
 
-      setItems(
-        (json.data || []).map((item) => ({
-          uid: item.UID,
-          code: item.UID,
-          year: item.fiscal,
-          type: item.boq_group,
-          description: item.boq_name,
-          boq_detail: item.boq_detail,
-          price: item.price,
-          itemStatus: item.status,
-          remark: item.remark,
-          selected: false,
-        }))
-      );
-      setTotalItems(json.totalCount || 0);
+      if (data.success) {
+        setItems(
+          data.data.map((item) => ({
+            uid: item.uid,
+            code: item.seqId,
+            year: item.fiscal,
+            type: item.unitId,
+            description: item.workItemName,
+            materialLevel1: item.materialLevel1,
+            laborLevel1: item.laborLevel1,
+            price: item.price,
+            unitId: item.unitId,
+            itemStatus: item.itemStatus,
+            remark: item.remark,
+            selected: false,
+          }))
+        );
+        setCurrentPage(1);
+      }
     } catch (err) {
-      console.error("Error loading BOQ:", err);
-    } finally {
-      setIsLoading(false);
+      console.error("Error loading work items:", err);
     }
-  }, [currentPage, itemsPerPage, filters.fiscal, filters.jobCode, filters.jobDescription]);
+  }, [filters.fiscal, filters.jobCode, filters.jobDescription]);
+
+  // useEffect(() => {
+  //   loadSelections();
+  //   loadWorkItems();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   useEffect(() => {
     loadSelections();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const mockData = Array.from({ length: 100 }, (_, i) => {
+      const id = i + 1;
+      return {
+        uid: `mock-uid-${id}`,
+        code: `JOB-${id.toString().padStart(3, '0')}`,
+        year: "2568",
+        type: id % 2 === 0 ? "ตารางเมตร" : "ต้น",
+        description: `รายการงานก่อสร้างลำดับที่ ${id} (ทดสอบระบบ Pagination)`,
+        materialLevel1: "วัสดุกลุ่ม A",
+        laborLevel1: "ค่าแรงกลุ่ม B",
+        price: 1500 + (id * 10),
+        unitId: id % 2 === 0 ? "U001" : "U002",
+        itemStatus: "T",
+        remark: "ข้อมูลจำลอง",
+        selected: false,
+      };
+    });
 
-  // Auto-filter with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentPage(1);
-      loadWorkItems(1, itemsPerPage);
-    }, 400);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.fiscal, filters.jobCode, filters.jobDescription, filters.unit, filters.material]);
+    setItems(mockData);
+  }, [loadSelections]);
 
 
   /* ───── actions ───── */
   const clearFilters = () => {
     setFilters({ ...emptyFilters });
-    setCurrentPage(1);
-    setTimeout(() => loadWorkItems(1, itemsPerPage), 0);
+    setTimeout(() => loadWorkItems(), 0);
   };
 
-  const refreshData = () => loadWorkItems(currentPage, itemsPerPage);
+  const refreshData = () => loadWorkItems();
 
   const handleToggleSelectAll = () => {
     const next = !selectAll;
@@ -268,84 +274,7 @@ export default function Screen4Page() {
   };
 
   const openNew = () => {
-    setConstructionName("");
-    setBoqForm({ boq_name: "", boq_detail: "", boq_group: "", status: "T", remark: "" });
-    setConstructionGroups([]);
-    setRootItems([]);
-    setSelectedTreeNode(null);
-    setEditingBoqUid(null);
     setShowConstructionPopup(true);
-  };
-
-  // แปลง API tree → constructionGroups format
-  const convertApiTree = (tree) => {
-    const convertHeader = (header) => ({
-      id: header.UID,
-      name: header.header_code || header.UID,
-      expanded: true,
-      items: (header.items || []).map((item) => ({
-        id: item.UID,
-        code: item.item_code || "",
-        name: item.item_code || "",
-        quantity: 0,
-        unit: "บาท/ตัวอย่าง",
-        materialPricePerUnit: item.price || 0,
-        materialTotal: 0,
-        laborPricePerUnit: 0,
-        laborTotal: 0,
-      })),
-      subGroups: (header.children || []).map(convertHeader),
-    });
-    return tree.map(convertHeader);
-  };
-
-  const handleEdit = async (uid) => {
-    setActiveMenu(null);
-    try {
-      const res = await fetch(`${API_BASE}/boqDetail?boq_uid=${uid}`);
-      if (!res.ok) {
-        alert("ไม่พบข้อมูล BOQ");
-        return;
-      }
-      const json = await res.json();
-      const b = json.boq || {};
-      setConstructionName(b.boq_name || "");
-      setBoqForm({
-        boq_name: b.boq_name || "",
-        boq_detail: b.boq_detail || "",
-        boq_group: b.boq_group || "",
-        status: b.status || "T",
-        remark: b.remark || "",
-      });
-      setEditingBoqUid(uid);
-      setConstructionGroups(convertApiTree(json.tree || []));
-      setSelectedTreeNode(null);
-      setShowConstructionPopup(true);
-    } catch (err) {
-      console.error("Error loading BOQ detail:", err);
-      alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
-    }
-  };
-
-  const handleDelete = async (uid) => {
-    setActiveMenu(null);
-    if (!confirm("ต้องการลบรายการนี้หรือไม่?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/boq`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ UID: uid, status: "F" }),
-      });
-      if (res.ok) {
-        alert("ลบสำเร็จ");
-        loadWorkItems(currentPage, itemsPerPage);
-      } else {
-        alert("ลบไม่สำเร็จ");
-      }
-    } catch (err) {
-      console.error("Error deleting:", err);
-      alert("เกิดข้อผิดพลาด");
-    }
   };
 
   const editItem = (item) => {
@@ -369,39 +298,39 @@ export default function Screen4Page() {
   const saveNewItem = async () => {
     if (!newItem.code) return alert("กรุณากรอกรหัส");
     if (!newItem.itemName) return alert("กรุณากรอกชื่อรายการ");
+    if (!newItem.unit) return alert("กรุณาเลือกหน่วย");
+    if (!newItem.labor) return alert("กรุณาเลือกแรงงาน");
 
     const body = {
       fiscal: selectedYear,
-      boq_name: newItem.itemName,
-      boq_detail: newItem.buildingGroup || null,
-      boq_group: newItem.code,
-      status: "T",
+      seqId: newItem.code,
+      workItemName: newItem.itemName,
+      materialLevel1: newItem.material || null,
+      laborLevel1: newItem.labor,
+      price: (newItem.materialCost || 0) + (newItem.laborCost || 0),
+      unitId: newItem.unit,
+      itemStatus: "T",
       remark: newItem.buildingGroup || null,
     };
 
     try {
-      let res;
       if (isEditMode) {
-        body.UID = items[editingIndex].uid;
-        res = await fetch(`${API_BASE}/boq`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        body.uid = items[editingIndex].uid;
+        const data = await res.json();
+        if (data.success) {
+          setShowSuccessDialog(true);
+          loadWorkItems();
+        } else {
+          alert("Error: " + data.message);
+        }
       } else {
-        res = await fetch(`${API_BASE}/boq`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      }
-
-      if (res.ok) {
-        setShowSuccessDialog(true);
-        loadWorkItems(currentPage, itemsPerPage);
-      } else {
-        const err = await res.json();
-        alert("Error: " + (err.message || "เกิดข้อผิดพลาด"));
+        const data = await res.json();
+        if (data.success) {
+          setShowSuccessDialog(true);
+          loadWorkItems();
+        } else {
+          alert("Error: " + data.message);
+        }
       }
     } catch (err) {
       console.error("Error saving item:", err);
@@ -424,12 +353,8 @@ export default function Screen4Page() {
     await Promise.all(
       selectedItems.map(async (item) => {
         try {
-          const res = await fetch(`${API_BASE}/boq`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ UID: item.uid, status: "F" }),
-          });
-          if (res.ok) deletedCount++;
+          const data = await res.json();
+          if (data.success) deletedCount++;
           else failedCount++;
         } catch {
           failedCount++;
@@ -441,20 +366,16 @@ export default function Screen4Page() {
     if (failedCount > 0) msg += `, ล้มเหลว ${failedCount} รายการ`;
     alert(msg);
     setSelectAll(false);
-    loadWorkItems(1, itemsPerPage);
+    loadWorkItems();
   };
 
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      loadWorkItems(page, itemsPerPage);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   const changeItemsPerPage = (val) => {
     setItemsPerPage(val);
     setCurrentPage(1);
-    loadWorkItems(1, val);
   };
 
   const updateNewItem = (patch) =>
@@ -480,20 +401,6 @@ export default function Screen4Page() {
   };
 
   const updateItemQuantity = (groupId, itemId, quantity) => {
-    if (groupId === "__root__") {
-      setRootItems((prev) =>
-        prev.map((item) => {
-          if (item.id !== itemId) return item;
-          return {
-            ...item,
-            quantity,
-            materialTotal: quantity * item.materialPricePerUnit,
-            laborTotal: quantity * item.laborPricePerUnit,
-          };
-        })
-      );
-      return;
-    }
     const update = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) {
@@ -546,10 +453,6 @@ export default function Screen4Page() {
       laborPricePerUnit: laborPrice,
       laborTotal: 0,
     };
-    if (groupId === "__root__") {
-      setRootItems((prev) => [...prev, newEntry]);
-      return;
-    }
     const addToGroup = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) return { ...g, items: [...g.items, newEntry] };
@@ -560,13 +463,9 @@ export default function Screen4Page() {
 
   const confirmAddGroup = (groupId) => {
     setAddChoiceGroupId(null);
-    const name = prompt("ชื่อกลุ่มใหม่:");
+    const name = prompt("ชื่อกลุ่มย่อยใหม่:");
     if (!name) return;
     const newGroup = { id: "g" + Date.now(), name, expanded: true, items: [], subGroups: [] };
-    if (groupId === "__root__") {
-      setConstructionGroups((prev) => [...prev, newGroup]);
-      return;
-    }
     const addToGroup = (groups) =>
       groups.map((g) => {
         if (g.id === groupId) return { ...g, subGroups: [...(g.subGroups || []), newGroup] };
@@ -578,7 +477,7 @@ export default function Screen4Page() {
   // construction computed values
   const flattenGroupItems = (groups) =>
     groups.flatMap((g) => [...g.items, ...flattenGroupItems(g.subGroups || [])]);
-  const allConstructionItems = [...rootItems, ...flattenGroupItems(constructionGroups)];
+  const allConstructionItems = flattenGroupItems(constructionGroups);
 
   const findGroupById = (groups, id) => {
     for (const g of groups) {
@@ -592,17 +491,15 @@ export default function Screen4Page() {
   const selectedGroup = selectedTreeNode ? findGroupById(constructionGroups, selectedTreeNode) : null;
   const displayGroups = selectedGroup ? [selectedGroup] : constructionGroups;
   const totalMaterialSum = allConstructionItems.reduce(
-    (s, i) => s + (parseFloat(i.materialPricePerUnit) || 0),
-    0
-  );
-  const totalCostSum = allConstructionItems.reduce(
-    (s, i) => s + (parseFloat(i.materialTotal) || 0),
+    (s, i) => s + i.materialTotal,
     0
   );
   const totalLaborSum = allConstructionItems.reduce(
-    (s, i) => s + (parseFloat(i.laborTotal) || 0),
+    (s, i) => s + i.laborTotal,
     0
   );
+  const totalCostSum = totalMaterialSum + totalLaborSum;
+  const costPerSqm = allConstructionItems.length > 0 ? totalCostSum / 7 : 0;
 
   /* ───────────── Tree group renderer (recursive) ───────────── */
   const renderGroup = (group, depth = 0) => (
@@ -754,23 +651,22 @@ export default function Screen4Page() {
         }
       `}</style>
 
-      <div className="bg-gray-50 min-h-screen center-template">
+      <div className="bg-gray-50 min-h-screen">
         {/* Main Content */}
         <div className="container mx-auto px-6 py-6">
-          <div className="text-black text-2xl font-medium mb-3">รายการ BOQ</div>
           {/* Filter Section */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex gap-4 mb-4">
               {/* รหัสงาน */}
               <div>
-                <label className="text-label">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   รหัสงาน
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="รหัสงาน..."
-                    className="custom-input"
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={filters.jobCode}
                     onChange={(e) =>
                       setFilters((f) => ({ ...f, jobCode: e.target.value }))
@@ -796,14 +692,14 @@ export default function Screen4Page() {
 
               {/* รายการงาน */}
               <div>
-                <label className="text-label">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   รายการงาน
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="รายการงาน..."
-                    className="custom-input"
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={filters.jobDescription}
                     onChange={(e) =>
                       setFilters((f) => ({
@@ -832,7 +728,7 @@ export default function Screen4Page() {
 
               {/* หน่วย */}
               <div>
-                <label className="text-label">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   หน่วย
                 </label>
                 <CustomDropdown
@@ -850,7 +746,7 @@ export default function Screen4Page() {
 
               {/* วัสดุ */}
               <div>
-                <label className="text-label">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   วัสดุ
                 </label>
                 <CustomDropdown
@@ -870,7 +766,7 @@ export default function Screen4Page() {
             {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-4">
               <button
-                className="button-primary-border"
+                className="px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2"
                 onClick={clearFilters}
               >
                 <svg
@@ -886,11 +782,11 @@ export default function Screen4Page() {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                Clear
+                <span>Clear</span>
               </button>
 
               <button
-                className="button-primary-border"
+                className="px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2"
                 onClick={refreshData}
               >
                 <svg
@@ -906,11 +802,15 @@ export default function Screen4Page() {
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
-                Refresh
+                <span>Refresh</span>
               </button>
 
               <button
-                className="button-primary-border"
+                className={`px-4 py-2 border border-gray-300  rounded-lg hover:bg-gray-50 flex items-center space-x-2 ${
+                  selectedItems.length === 0
+                    ? " opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
                 disabled={selectedItems.length === 0}
                 onClick={deleteSelected}
               >
@@ -927,15 +827,15 @@ export default function Screen4Page() {
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                   />
                 </svg>
-                ลบที่เลือก ({selectedItems.length})
+                <span>ลบที่เลือก ({selectedItems.length})</span>
               </button>
 
               <button
-                className="button-primary"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                 onClick={openNew}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-                เพิ่มข้อมูล
+                <span className="text-xl font-light">+</span>
+                <span>New</span>
               </button>
             </div>
           </div>
@@ -946,7 +846,7 @@ export default function Screen4Page() {
                 <table className="modern-table w-full">
                   <thead className="bg-gray-50/50">
                     <tr>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16"></th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
                       <th className="px-6 py-3">
                         <div className="flex justify-center">
                           <input
@@ -965,7 +865,8 @@ export default function Screen4Page() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {items.map((item, idx) => {
+                    {pagedItems.map((item, idx) => {
+                      // ใช้ itemId ที่ไม่ซ้ำกันแน่นอน
                       const itemId = item.uid || item.code || `row-${idx}`;
                       const globalIdx = (currentPage - 1) * itemsPerPage + idx;
 
@@ -990,7 +891,7 @@ export default function Screen4Page() {
                                   <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
                                   <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                 </svg> 
-                                <span>แก้ไขรายละเอียด</span>
+                                <span>ดูรายละเอียด</span>
                               </button>
 
                               <button 
@@ -1049,63 +950,18 @@ export default function Screen4Page() {
         <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={closeConstructionPopup} />
           <div className="fixed inset-4 md:inset-8 flex flex-col bg-white rounded-lg shadow-xl z-10 overflow-hidden">
-
-            {/* BOQ Info Header */}
-            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold text-gray-900">
-                  {editingBoqUid ? "แก้ไขรายการ BOQ" : "สร้างรายการ BOQ ใหม่"}
-                </h3>
-                <button className="text-gray-400 hover:text-gray-600 p-1" onClick={closeConstructionPopup}>
+            {/* Popup Header / Tabs */}
+            <div className="flex items-center border-b border-gray-200 bg-white px-4 shrink-0">
+              <button className="px-4 py-3 text-sm  hover:text-gray-700 border-b-2 border-transparent">ข้อมูลสิ่งก่อสร้าง</button>
+              <button className="px-4 py-3 text-sm text-blue-600 font-medium border-b-2 border-blue-600">สร้างบัญชีรายการสิ่งก่อสร้าง</button>
+              <button className="px-4 py-3 text-sm  hover:text-gray-700 border-b-2 border-transparent">แสดงบัญชีรายการสิ่งก่อสร้าง</button>
+              <button className="px-4 py-3 text-sm  hover:text-gray-700 border-b-2 border-transparent">สรุปข้อมูลวัสดุ</button>
+              <button className="px-4 py-3 text-sm  hover:text-gray-700 border-b-2 border-transparent">สรุปข้อมูลค่าแรง</button>
+              <button className="px-4 py-3 text-sm  hover:text-gray-700 border-b-2 border-transparent">รายงานสิ่งก่อสร้าง</button>
+              <div className="ml-auto">
+                <button className=" hover:text-gray-600 p-1" onClick={closeConstructionPopup}>
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-              </div>
-              <div className="grid grid-cols-5 gap-4">
-                <div>
-                  <label className="text-label">ชื่อ BOQ</label>
-                  <input
-                    type="text"
-                    className="custom-input"
-                    placeholder="ชื่อ BOQ..."
-                    value={boqForm.boq_name}
-                    onChange={(e) => setBoqForm(f => ({ ...f, boq_name: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="text-label">รายละเอียด</label>
-                  <input
-                    type="text"
-                    className="custom-input"
-                    placeholder="รายละเอียด..."
-                    value={boqForm.boq_detail}
-                    onChange={(e) => setBoqForm(f => ({ ...f, boq_detail: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="text-label">กลุ่ม BOQ</label>
-                  <CustomDropdown
-                    options={boqGroups}
-                    value={boqForm.boq_group}
-                    placeholder="เลือกกลุ่ม..."
-                    isOpen={openDropdown === "boqGroup"}
-                    onToggle={() => toggleDropdown("boqGroup")}
-                    onSelect={(v) => {
-                      setBoqForm(f => ({ ...f, boq_group: v }));
-                      setOpenDropdown(null);
-                    }}
-                  />
-                </div>
-                <div className="col-span-5">
-                  <label className="text-label">หมายเหตุ</label>
-                  <textarea
-                    className="custom-input"
-                    style={{ height: "auto", resize: "none" }}
-                    placeholder="หมายเหตุ..."
-                    rows={3}
-                    value={boqForm.remark}
-                    onChange={(e) => setBoqForm(f => ({ ...f, remark: e.target.value }))}
-                  />
-                </div>
               </div>
             </div>
 
@@ -1119,26 +975,10 @@ export default function Screen4Page() {
                     <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>
                     <span className="text-sm font-medium text-blue-700">{constructionName}</span>
                   </div>
-                  <button className=" hover:text-blue-600 p-0.5" onClick={() => setAddChoiceGroupId("__root__")} title="เพิ่มกลุ่ม/รายการ">
+                  <button className=" hover:text-blue-600 p-0.5" onClick={addGroupToConstruction} title="เพิ่มกลุ่ม">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                   </button>
                 </div>
-
-                {/* Root items */}
-                {rootItems.length > 0 && (
-                  <div className="ml-5">
-                    {rootItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`flex items-center gap-1 py-0.5 cursor-pointer text-sm hover:text-blue-600 ${selectedTreeNode === item.id ? "text-blue-700 font-medium" : "text-gray-600"}`}
-                        onClick={() => setSelectedTreeNode(item.id)}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        {item.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {/* Groups */}
                 {constructionGroups.map((group) => renderGroup(group, 0))}
@@ -1165,7 +1005,10 @@ export default function Screen4Page() {
                     <span className="font-medium">ค่าแรง :</span> {formatNumber(totalLaborSum)} บาท
                   </span>
                   <span className="inline-flex items-center gap-1 border border-gray-300 rounded px-3 py-1.5  text-xs bg-white">
-                    <span className="font-medium">ราคารวม :</span> {formatNumber(totalMaterialSum + totalLaborSum)} บาท
+                    <span className="font-medium">ราคารวม :</span> {formatNumber(totalCostSum)} บาท
+                  </span>
+                  <span className="inline-flex items-center gap-1 border border-blue-400 rounded px-3 py-1.5  text-xs bg-blue-50 text-blue-700">
+                    <span className="font-medium">ราคาต่อพื้นที่ 1 ตร.ม. :</span> {formatNumber(costPerSqm)} บาท
                   </span>
                 </div>
 
@@ -1180,44 +1023,48 @@ export default function Screen4Page() {
                         <th className="px-3 py-2 text-center font-medium">จำนวน</th>
                         <th className="px-3 py-2 text-center font-medium">หน่วย</th>
                         <th className="px-3 py-2 text-center font-medium">ราคาวัสดุ/หน่วย</th>
-                        <th className="px-3 py-2 text-center font-medium">ค่าวัสดุ</th>
+                        <th className="px-3 py-2 text-center font-medium">ค่าวัสดุ (จำนวนเงิน)</th>
                         <th className="px-3 py-2 text-center font-medium">ค่าแรง/หน่วย</th>
-                        <th className="px-3 py-2 text-center font-medium">ค่าแรง</th>
+                        <th className="px-3 py-2 text-center font-medium">ค่าแรง (จำนวนเงิน)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {(() => {
                         let rowNum = 0;
-                        const makeRow = (item, gId) => {
-                          rowNum++;
-                          return (
-                            <tr key={item.id} className="hover:bg-yellow-50 transition-colors">
-                              <td className="px-3 py-2.5 text-center ">{rowNum}</td>
-                              <td className="px-3 py-2.5 text-gray-700">{item.code}</td>
-                              <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
-                              <td className="px-3 py-2.5 text-center ">
-                                <input
-                                  type="number"
-                                  className="w-20 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItemQuantity(gId, item.id, Number(e.target.value) || 0)}
-                                />
-                              </td>
-                              <td className="px-3 py-2.5 text-center ">{item.unit}</td>
-                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.materialPricePerUnit)}</td>
-                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.materialTotal)}</td>
-                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.laborPricePerUnit)}</td>
-                              <td className="px-3 py-2.5 text-right tabular-nums">{formatNumber(item.laborTotal)}</td>
-                            </tr>
-                          );
-                        };
                         const renderRows = (groups) =>
                           groups.flatMap((group) => [
-                            ...group.items.map((item) => makeRow(item, group.id)),
+                            ...group.items.map((item) => {
+                              rowNum++;
+                              return (
+                                <tr key={item.id} className="hover:bg-yellow-50 transition-colors">
+                                  <td className="px-3 py-2.5 text-center ">{rowNum}</td>
+                                  <td className="px-3 py-2.5 text-gray-700">{item.code}</td>
+                                  <td className="px-3 py-2.5 text-gray-700">{item.name}</td>
+                                  <td className="px-3 py-2.5 text-center ">
+                                    <input
+                                      type="number"
+                                      className="w-20 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                      value={item.quantity}
+                                      onChange={(e) =>
+                                        updateItemQuantity(
+                                          group.id,
+                                          item.id,
+                                          Number(e.target.value) || 0
+                                        )
+                                      }
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center ">{item.unit}</td>
+                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.materialPricePerUnit)}</td>
+                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.materialTotal)}</td>
+                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.laborPricePerUnit)}</td>
+                                  <td className="px-3 py-2.5 text-right  tabular-nums">{formatNumber(item.laborTotal)}</td>
+                                </tr>
+                              );
+                            }),
                             ...renderRows(group.subGroups || []),
                           ]);
-                        const rootRows = !selectedGroup ? rootItems.map((item) => makeRow(item, "__root__")) : [];
-                        return [...rootRows, ...renderRows(displayGroups)];
+                        return renderRows(displayGroups);
                       })()}
                     </tbody>
                   </table>
