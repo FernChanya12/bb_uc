@@ -478,10 +478,10 @@ export default function BudgetApp() {
               onSearch={searchFilter}
               onClear={clearFilters}
             >
-              <div className="grid grid-cols-1 gap-4 mb-6">           
+              <div className="grid grid-cols-1 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">สถานะการอนุมัติ</label>
-                  <select value={filters.unitId}
+                  <select value={filters.status}
                     onChange={(e) => handleFilterChange("status", e.target.value)}
                     className="custom-input"
                     placeholder="ค้นหา">
@@ -527,11 +527,11 @@ export default function BudgetApp() {
               <table className="modern-table w-full text-black">
                 <thead className="bg-gray-50/50">
                   <tr>
-                    {["", "เลขที่สัญญา", "ชื่อโครงการ", "สถานะ", "สถานะการอนุมัติ"].map((h) => (
-                      <th key={h} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        {h}
-                      </th>
-                    ))}
+                    <th className="w-10"></th>
+                    <th className="w-10">เลขที่สัญญา</th>
+                    <th className="w-80">ชื่อโครงการ</th>
+                    <th className="w-30">สถานะ</th>
+                    <th className="w-30">สถานะการอนุมัติ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -611,15 +611,22 @@ export default function BudgetApp() {
               <table className="modern-table w-full text-black">
                 <thead className="bg-gray-50/50">
                   <tr>
-                    {[<input className="custom-checkbox"
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={handleCheckAll}
-                    />, "No.", "ID", "ประเภทสิ่งก่อสร้าง", "ชื่อรายการ", "พื้นที่/ระยะทาง", "ค่าวัสดุ", "ค่าแรง", "ราคารวม", "แก้ไขโดย"].map((h) => (
-                      <th key={h} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        {h}
-                      </th>
-                    ))}
+                    <th className="w-10">
+                      <input className="custom-checkbox"
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={handleCheckAll}
+                      />
+                    </th>
+                    <th className="w-10">No.</th>
+                    <th className="w-30">ID</th>
+                    <th className="w-30">ประเภทสิ่งก่อสร้าง</th>
+                    <th className="w-60">ชื่อรายการ</th>
+                    <th className="w-30">พื้นที่/ระยะทาง</th>
+                    <th className="w-30">ค่าวัสดุ</th>
+                    <th className="w-30">ค่าแรง</th>
+                    <th className="w-30">ราคารวม</th>
+                    <th className="w-30">แก้ไขโดย</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -648,11 +655,11 @@ export default function BudgetApp() {
                         <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
                           {(currentPageDetail - 1) * itemsPerPageDetail + idx + 1}
                         </td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_code}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.item_code}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_type}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.remark}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
-                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.price}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.price}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.total}</td>
                         <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.updated_by}</td>
