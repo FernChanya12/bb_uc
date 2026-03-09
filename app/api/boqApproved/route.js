@@ -30,7 +30,7 @@ export async function GET(request) {
         }
         return NextResponse.json(result, { status: 200 });
       }
-      return NextResponse.json(data, { status: 200 });
+      return NextResponse.json(data.uc_group, { status: 200 });
     }
 
     // ตรวจสอบชื่อ table ที่ถูกต้อง
