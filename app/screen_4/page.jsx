@@ -5,7 +5,30 @@ import Pagination from "@/app/components/pagination";
 import KebabMenu from "@/app/components/kebabMenu";
 import { FilterDrawer } from "../components/filter-slide";
 import { SearchInput } from "../components/search-input";
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "/api"; 
+
+const ApiService = {
+  callData: (params) => {
+    const query = typeof params === 'object' 
+      ? new URLSearchParams(params).toString() 
+      : params;
+
+    return fetch(`${API_BASE}/boqApproved?${query}`).then((r) => {
+      if (!r.ok) throw new Error(`Error: ${r.status}`);
+      return r.json();
+    });
+  },
+  updateItem: (data) =>
+    fetch(`${API_BASE}/ucItem`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
+  deleteItem: (uid) =>
+    fetch(`${API_BASE}/ucItem?UID=${uid}`, {
+      method: "DELETE",
+    }).then((r) => r.json()),
+};
 
 const emptyFilters = {
   fiscal: "",
@@ -70,75 +93,74 @@ const IconTrash = ({ className = "w-4 h-4" }) => (
 const formatNumber = (n) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/* ───────────── Custom Dropdown ───────────── */
-function CustomDropdown({ options, value, placeholder, isOpen, onToggle, onSelect }) {
-  const ref = useRef(null);
 
 
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
-        if (isOpen) onToggle();
-      }
-    }
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [isOpen, onToggle]);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label;
+const EMPTY_FILTERS = { item_name: "", item_code: "", unitId: "", itemStatus: "", searchText: "" };
 
-  return (
-    <div ref={ref} className="custom-dropdown relative">
-      <div className="custom-dropdown-trigger" onClick={onToggle}>
-        {selectedLabel ? (
-          <span>{selectedLabel}</span>
-        ) : (
-          <span>{placeholder}</span>
-        )}
-        <div className="custom-dropdown-icon">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-      {isOpen && (
-        <div className="custom-dropdown-menu" style={{ display: "block" }}>
-          {options.map((opt) => (
-            <div
-              key={opt.value}
-              className={`custom-dropdown-option${value === opt.value ? " selected" : ""}`}
-              onClick={() => onSelect(opt.value)}
-            >
-              {opt.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-export default function Screen4Page() {
+export default function BudgetApp() {
   // --- state ---
   const [selectedYear] = useState("2568");
-  const [filters, setFilters] = useState({ ...emptyFilters });
+  const [selectedParentId, setSelectedParentId] = useState(null); // เก็บ UID ของรายการที่คลิก
+  const [subItems, setSubItems] = useState([]); // เก็บข้อมูลตารางลูก
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [items, setItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [units, setUnits] = useState([]);
-
-  const [buildingGroups] = useState([
-    { value: "group1", label: "บ้านพักข้าราชการ" },
-    { value: "group2", label: "บ้านพักข้าราชการ2" },
-    { value: "group3", label: "อาคารอเนกประสงค์-หลังคาเหล็ก" },
-    { value: "group4", label: "อาคารเรียนปูนเปือโบง" },
-  ]);
-
-  const [materials, setMaterials] = useState([]);
-  const [laborTypes, setLaborTypes] = useState([]);
+  const HIERARCHY = [
+    { table: 'uc_group',    next: 'uc_boq',      parentKey: 'GROUP_ID' },
+    { table: 'uc_boq',      next: 'boq_header',  parentKey: 'BOQ_TYPE_ID' },
+    { table: 'boq_header',  next: 'boq_item',    parentKey: 'HEADER_ID' },
+    { table: 'boq_item',    next: null,          parentKey: null }
+  ];
+  const [currentLevel, setCurrentLevel] = useState(0); // 0 คือ uc_group
+  const [parentFilters, setParentFilters] = useState({}); // เก็บ ID ที่ส่งต่อมาจากชั้นก่อนหน้า
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  
+  const handleEdit = (uid) => console.log("Edit:", uid);
+  const handleDelete = (uid) => console.log("Delete:", uid);
+  const [parentId, setParentId] = useState(null); // เก็บ ID ของตัวแม่ที่คลิกเข้ามา
+  const [navHistory, setNavHistory] = useState([]); // เก็บประวัติการคลิกเพื่อใช้กดย้อนกลับ
+  const loadData = useCallback(async (level = 0, pCode = null, f = filters) => {
+    setIsLoading(true);
+    try {
+      const tableOrder = ['uc_group', 'uc_boq', 'boq_header', 'boq_item'];
+      const currentTable = tableOrder[level] || 'uc_group';
+      const queryObj = { table: currentTable };
+      if (pCode) {
+        queryObj.UID_PARENT = pCode; 
+      }
+
+      const res = await ApiService.callData(queryObj);
+          console.log("res",res);
+
+      if (res && Array.isArray(res)) {
+        setItems(res.map((item) => ({
+          uid: item.UID, 
+          code: item.code || item.group_code || "-", 
+          itemName: item.group_name || item.boq_name || item.remark || "-",
+          year: item.fiscal,
+          status: item.status,
+          raw: item
+        })));
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
 
   // modal
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -146,12 +168,6 @@ export default function Screen4Page() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [newItem, setNewItem] = useState({ ...emptyNewItem });
-
-  // dropdowns open state
-  const [openDropdown, setOpenDropdown] = useState(null);
-
-  // hover row
-  const [hoverIdx, setHoverIdx] = useState(null);
 
   // construction popup
   const [showConstructionPopup, setShowConstructionPopup] = useState(false);
@@ -170,27 +186,16 @@ export default function Screen4Page() {
     currentPage * itemsPerPage
   );
 
-  /* ───── helpers ───── */
-  const getLabel = (list, value) =>
-    list.find((o) => o.value === value)?.label ?? "";
-
-  const toggleDropdown = useCallback(
-    (name) => setOpenDropdown((prev) => (prev === name ? null : name)),
-    []
-  );
-
   /* ───── API calls ───── */
-  const loadSelections = useCallback(async () => {
+  const loadUnitList = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/selectionUnit`, { method: "GET" });
       const data = await res.json();
-      console.log("Units:", data);
-      // support array response, { units: [...] }, or { success, units: [...] }
       const rawUnits = Array.isArray(data)
         ? data
         : Array.isArray(data.units)
-        ? data.units
-        : [];
+          ? data.units
+          : [];
       setUnits(rawUnits.map((u) => ({ value: u.UID, label: u.unit_name })));
       if (data.materials) setMaterials(data.materials);
       if (data.laborTypes) setLaborTypes(data.laborTypes);
@@ -235,36 +240,53 @@ export default function Screen4Page() {
     }
   }, [filters.fiscal, filters.jobCode, filters.jobDescription]);
 
-  // useEffect(() => {
-  //   loadSelections();
-  //   loadWorkItems();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
-
   useEffect(() => {
-    loadSelections();
-    const mockData = Array.from({ length: 100 }, (_, i) => {
-      const id = i + 1;
-      return {
-        uid: `mock-uid-${id}`,
-        code: `JOB-${id.toString().padStart(3, '0')}`,
-        year: "2568",
-        type: id % 2 === 0 ? "ตารางเมตร" : "ต้น",
-        description: `รายการงานก่อสร้างลำดับที่ ${id} (ทดสอบระบบ Pagination)`,
-        materialLevel1: "วัสดุกลุ่ม A",
-        laborLevel1: "ค่าแรงกลุ่ม B",
-        price: 1500 + (id * 10),
-        unitId: id % 2 === 0 ? "U001" : "U002",
-        itemStatus: "T",
-        remark: "ข้อมูลจำลอง",
-        selected: false,
-      };
-    });
+      loadData(0, null, EMPTY_FILTERS); 
+      loadUnitList();
+    }, []);
+  const [parentCode, setParentCode] = useState(null); // สำหรับ UI
+  const [parentUid, setParentUid] = useState(null);   // สำหรับ API
 
-    setItems(mockData);
-  }, [loadSelections]);
+  const handleViewDetail = (item) => {
+    const nextLevel = currentLevel + 1;
+    
+    if (nextLevel < 4) {
+      const targetParentId = typeof item === 'object' ? item.uid : item;
+      const targetParentCode = typeof item === 'object' ? item.code : item;
 
+      if (!targetParentCode) {
+        console.error("ไม่พบ UID สำหรับอ้างอิงชั้นลูก. ข้อมูลที่ได้รับ:", item);
+        return;
+      }
 
+      setNavHistory(prev => [...prev, { 
+        level: currentLevel, 
+        pId: parentId, 
+        pCode: parentCode 
+      }]);
+      
+      setCurrentLevel(nextLevel);
+      setParentId(targetParentId); 
+      setParentCode(targetParentCode);
+      
+      loadData(nextLevel, targetParentCode, filters);
+      setCurrentPage(1);
+    }
+  };
+
+  const handleBack = () => {
+    if (navHistory.length > 0) {
+      const lastPage = navHistory[navHistory.length - 1];
+      
+      // คืนค่าประวัติล่าสุด
+      setNavHistory(prev => prev.slice(0, -1));
+      setCurrentLevel(lastPage.level);
+      setParentId(lastPage.pId);
+      setParentCode(lastPage.pCode); // คืนค่า Code ให้ UI
+      
+      loadData(lastPage.level, lastPage.pCode);
+    }
+  };
   /* ───── actions ───── */
   const clearFilters = () => {
     setFilters({ ...emptyFilters });
@@ -596,12 +618,12 @@ export default function Screen4Page() {
             <SearchInput
               value={filters.searchText}
               onSearch={(val) => loadData(filters)}
-              placeholder="ค้นหารายการ..."
+              placeholder="ค้นหา..."
             />
   
             {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-4">
-              <button onClick={() => loadData(filters)}
+              <button onClick={() => loadData(currentLevel, parentId, filters)}
                 className="button-primary-border">
                 <IconRefresh />Refresh
               </button>
@@ -609,11 +631,6 @@ export default function Screen4Page() {
               <button onClick={deleteSelected} disabled={selectedItems.size === 0}
                 className="button-primary-border">
                 <IconTrash />ลบที่เลือก ({selectedItems.size})
-              </button>
-  
-              <button onClick={openNewDialog}
-                className="button-primary">
-                <IconAdd />เพิ่มข้อมูล
               </button>
   
               <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
@@ -629,128 +646,178 @@ export default function Screen4Page() {
               onClear={clearFilters}
             >
               <div className="grid grid-cols-1 gap-4 mb-6">
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
                   <input type="text" value={filters.name}
                     onChange={(e) => handleFilterChange("name", e.target.value)}
                     className="custom-input"
                     placeholder="วัสดุ..." />
-                </div>
+                </div> */}
   
-                {/* GFMIS */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
-                  <input type="text" value={filters.gfmis}
-                    onChange={(e) => handleFilterChange("gfmis", e.target.value)}
-                    className="custom-input"
-                    placeholder="รหัสกระทรวงพาณิชย์" />
-                </div>
-  
-                {/* Item Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
-                  <select value={filters.unitId}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
+                  <select 
+                    value={filters.unitId}
                     onChange={(e) => handleFilterChange("unitId", e.target.value)}
                     className="custom-input"
-                    placeholder="ค้นหา">
-                    <option value="">-- ทั้งหมด --</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
+                    placeholder="ค้นหา"
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {units.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+  
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
+                  <select 
+                    value={filters.unitId}
+                    onChange={(e) => handleFilterChange("unitId", e.target.value)}
+                    className="custom-input"
+                    placeholder="ค้นหา"
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {units.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             </FilterDrawer>
           </div>
+          {currentLevel > 0 && (
+            <div className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+              <div className="flex items-center justify-between gap-3">
+                
+                <div>
+                  {/* <h2 className="text-xl font-bold text-gray-800">
+                    {currentLevel === 1 && "กลุ่มย่อย (uc_boq)"}
+                    {currentLevel === 2 && "หัวข้อโครงการ (boq_header)"}
+                    {currentLevel === 3 && "รายการวัสดุ (boq_item)"}
+                  </h2> */}
+                  
+                  <div className="flex flex-col gap-1 mt-1">
+                    <p className="text-sm text-blue-600 font-medium">
+                      รหัสรายการ: 
+                      <span className="ml-2 text-gray-900 font-bold px-2 py-0.5 bg-blue-100 rounded border border-blue-200">
+                        {parentCode}
+                      </span>
+                    </p>
+                    <p className="text-sm text-gray-500 font-medium">
+                      กำลังดู: {items.length > 0 ? `${items.length} รายการ` : "ไม่พบข้อมูล"}
+                    </p>
+                  </div>
+                </div>
 
+                <button 
+                  onClick={handleBack} 
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 rounded-lg shadow-sm hover:bg-blue-50 transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-left-short" viewBox="0 0 16 16">
+                    <path fillRule="evenodd" d="M12 8a.5.5 0 0 1-.5.5H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5a.5.5 0 0 1 .5.5z"/>
+                  </svg>
+                  ย้อนกลับ
+                </button>
+
+              </div>
+            </div>
+          )}
+
+
+          
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-4 md:p-6">
-                <div className="overflow-x-auto">
-                  <table className="modern-table w-full">
-                    <thead className="bg-gray-50/50">
-                      <tr>
-                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
-                        <th className="px-6 py-3">
-                          <div className="flex justify-center">
+            <div className="p-4 md:p-6">
+              <div className="overflow-x-auto">
+                <table className="modern-table w-full">
+                  <thead className="bg-gray-50/50">
+                    <tr>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
+                      <th className="px-6 py-3">
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            className="custom-checkbox"
+                            checked={selectAll}
+                            onChange={handleToggleSelectAll}
+                          />
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-center">ลำดับ</th>
+                      <th className="px-6 py-3 text-center">รหัสรายการ</th>
+                      <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
+                      <th className="px-6 py-3 text-center">รายการ</th>
+                      <th className="px-6 py-3 text-center">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {pagedItems.map((item, idx) => {
+                      const itemId = item.uid || item.code || `row-${idx}`;
+                      const globalIdx = (currentPage - 1) * itemsPerPage + idx;
+
+                      return (
+                        <tr
+                          key={itemId}
+                          className="modern-table-row hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="px-4 py-4 text-center">
+                            <KebabMenu
+                              itemId={itemId}
+                              activeMenu={activeMenu}
+                              setActiveMenu={setActiveMenu}
+                            >
+                              <button 
+                                className="kebab-menu-item w-full" 
+                                onClick={() => handleViewDetail(item)}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye text-blue-500" viewBox="0 0 16 16">
+                                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                </svg> 
+                                <span>ดูรายละเอียด</span>
+                              </button>
+
+                              <button 
+                                className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
+                                onClick={() => handleDelete(item.uid)}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
+                                  <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                </svg> 
+                                <span>ลบรายการ</span>
+                              </button>
+                            </KebabMenu>
+                          </td>
+
+                          <td className="px-6 py-4 text-center">
                             <input
                               type="checkbox"
                               className="custom-checkbox"
-                              checked={selectAll}
-                              onChange={handleToggleSelectAll}
+                              checked={item.selected || false}
+                              onChange={() => handleItemSelect(globalIdx)}
                             />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 text-center">ลำดับ</th>
-                        <th className="px-6 py-3 text-center">รหัสรายการ</th>
-                        <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
-                        <th className="px-6 py-3 text-center">รายการ</th>
-                        <th className="px-6 py-3 text-center">สถานะ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {pagedItems.map((item, idx) => {
-                        const itemId = item.uid || item.code || `row-${idx}`;
-                        const globalIdx = (currentPage - 1) * itemsPerPage + idx;
+                          </td>
 
-                        return (
-                          <tr
-                            key={itemId}
-                            className="modern-table-row hover:bg-gray-50/50 transition-colors"
-                          >
-                            <td className="px-4 py-4 text-center">
-                              <KebabMenu
-                                itemId={itemId}
-                                activeMenu={activeMenu}
-                                setActiveMenu={setActiveMenu}
-                              >
-                                <button 
-                                  className="kebab-menu-item w-full" 
-                                  onClick={() => handleEdit(item.uid)}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye text-blue-500" viewBox="0 0 16 16">
-                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                                  </svg> 
-                                  <span>ดูรายละเอียด</span>
-                                </button>
-
-                                <button 
-                                  className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
-                                  onClick={() => handleDelete(item.uid)}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
-                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                  </svg> 
-                                  <span>ลบรายการ</span>
-                                </button>
-                              </KebabMenu>
-                            </td>
-
-                            <td className="px-6 py-4 text-center">
-                              <input
-                                type="checkbox"
-                                className="custom-checkbox"
-                                checked={item.selected || false}
-                                onChange={() => handleItemSelect(globalIdx)}
-                              />
-                            </td>
-
-                            <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
-                            <td className="px-6 py-4">{item.code}</td>
-                            <td className="px-6 py-4">{item.year}</td>
-                            <td className="px-6 py-4 font-medium text-gray-700">{item.description}</td>
-                            <td className="px-6 py-4">
-                              <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
-                                {item.type}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                          <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
+                          <td className="px-6 py-4">{item.code}</td>
+                          <td className="px-6 py-4">{item.year}</td>
+                          <td className="px-6 py-4 font-medium text-gray-700">{item.itemName}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
+                              {item.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
+            </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -759,8 +826,8 @@ export default function Screen4Page() {
                 changeItemsPerPage={changeItemsPerPage}
                 goToPage={goToPage}
               />
-            </div>
           </div>
+        </div>
       </div>
 
       {/* ═══════ Construction Popup ═══════ */}
