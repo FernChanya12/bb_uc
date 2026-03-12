@@ -1,17 +1,17 @@
 import dbConfig from '@/lib/db';
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 
-const JSON_PATH = path.join(process.cwd(), 'public', 'data', 'boq_approving.json');
-
-// GET - ดึงข้อมูล unit สำหรับ dropdown
+// GET - ดึงข้อมูล BOQ ที่รอการอนุมัติ
 export async function GET() {
   try {
-    // DB: const [rows] = await dbConfig.query('SELECT UID, unit_code, unit_name FROM uc_unit');
-    const raw = await fs.readFile(JSON_PATH, 'utf-8');
-    const data = JSON.parse(raw);
-    return NextResponse.json(data.uc_boq, { status: 200 });
+    const connection = await dbConfig.getConnection();
+    try {
+      await connection.query("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
+      const [rows] = await connection.query('SELECT * FROM uc_boq WHERE status != ?', ['F']);
+      return NextResponse.json(rows, { status: 200 });
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
   }

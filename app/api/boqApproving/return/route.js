@@ -1,73 +1,55 @@
+import dbConfig from '@/lib/db';
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
-
-const JSON_PATH = path.join(process.cwd(), 'public', 'data', 'boq_approving.json');
 
 // POST - ส่งคืน BOQ: เพิ่ม log status R และอัปเดต boq_item status R
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { boq_uid, report_id, remark, reason, created_by = 'admin' } = body;
+    const { boq_id, report_id, remark, reason, created_by = 'admin' } = body;
 
-    if (!boq_uid) {
-      return NextResponse.json({ message: 'boq_uid is required' }, { status: 400 });
+    if (!boq_id) {
+      return NextResponse.json({ message: 'boq_id is required' }, { status: 400 });
     }
 
     if (!reason) {
       return NextResponse.json({ message: 'reason is required for return' }, { status: 400 });
     }
 
-    // DB:
-    // const conn = await dbConfig.getConnection();
-    // await conn.query('SET NAMES utf8mb4 COLLATE utf8mb4_general_ci');
-    // await conn.query('CALL returnBoq(?, ?, ?, ?, ?)', [boq_uid, report_id, remark, reason, created_by]);
-    // conn.release();
+    const connection = await dbConfig.getConnection();
+    try {
+      await connection.query("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
+      await connection.beginTransaction();
 
-    const raw = await fs.readFile(JSON_PATH, 'utf-8');
-    const data = JSON.parse(raw);
+      const boqLogId = crypto.randomUUID();
 
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      // 1. Insert approve log status R
+      await connection.query(
+        `INSERT INTO boq_approve_log (boq_log_id, boq_id, report_id, status, reason, remark, created_date, created_by, updated_date, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), ?)`,
+        [boqLogId, boq_id, report_id || null, 'R', reason, remark || null, created_by, created_by]
+      );
 
-    // 1. เพิ่ม boq_approve_log ใหม่ status R
-    const newLog = {
-      UID: 'LOG' + crypto.randomUUID().substring(0, 8).toUpperCase(),
-      boq_id: boq_uid,
-      report_id: report_id || null,
-      status: 'R',
-      reason: reason,
-      remark: remark || null,
-      created_date: now,
-      created_by,
-      updated_date: now,
-      updated_by: created_by,
-    };
-    data.boq_approve_log.push(newLog);
+      // 2. อัปเดต boq_item status = 'R' ผ่าน boq_header
+      const [result] = await connection.query(
+        `UPDATE boq_item bi
+         JOIN boq_header bh ON bi.boq_header_code = bh.header_code
+         SET bi.status = ?, bi.updated_date = NOW(), bi.updated_by = ?
+         WHERE bh.boq_code = ?`,
+        ['R', created_by, boq_id]
+      );
 
-    // 2. หา header UID ที่อยู่ใต้ boq_uid
-    const headerUids = new Set(
-      data.boq_header
-        .filter((h) => h.UID_PARENT === boq_uid)
-        .map((h) => h.UID)
-    );
+      await connection.commit();
 
-    // 3. อัปเดต boq_item status เป็น R
-    let updatedCount = 0;
-    data.boq_item = data.boq_item.map((item) => {
-      if (headerUids.has(item.UID_PARENT)) {
-        updatedCount++;
-        return { ...item, status: 'R', updated_date: now, updated_by: created_by };
-      }
-      return item;
-    });
-
-    await fs.writeFile(JSON_PATH, JSON.stringify(data, null, 2), 'utf-8');
-
-    return NextResponse.json(
-      { message: 'Returned successfully', log: newLog, updatedItems: updatedCount },
-      { status: 200 }
-    );
+      return NextResponse.json(
+        { message: 'Returned successfully', boq_log_id: boqLogId, updatedItems: result.affectedRows },
+        { status: 200 }
+      );
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
   }

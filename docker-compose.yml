@@ -1,0 +1,52 @@
+services:
+  # ─── Next.js App ────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bb_uc_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-bb_user}
+      DB_PASSWORD: ${DB_PASSWORD:-bb_password}
+      DB_NAME: ${DB_NAME:-bb_uc}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bb_network
+
+  # ─── MySQL ──────────────────────────────────────────────────
+  db:
+    image: mysql:8.4
+    container_name: bb_uc_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+      MYSQL_DATABASE: ${DB_NAME:-bb_uc}
+      MYSQL_USER: ${DB_USER:-bb_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-bb_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - bb_network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  bb_network:
+    driver: bridge

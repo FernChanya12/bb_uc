@@ -1,16 +1,17 @@
 import dbConfig from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-
 // GET - ดึงข้อมูล group สำหรับ dropdown
 export async function GET() {
   try {
     const connection = await dbConfig.getConnection();
     try {
       await connection.query("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
-      const [results] = await connection.query('CALL selectionGroup()');
-      const data = results[0] || [];
-      return NextResponse.json(data, { status: 200 });
+      const [rows] = await connection.query(
+        'SELECT group_id, group_code, group_name FROM uc_group WHERE status = ?',
+        ['T']
+      );
+      return NextResponse.json(rows, { status: 200 });
     } finally {
       connection.release();
     }
