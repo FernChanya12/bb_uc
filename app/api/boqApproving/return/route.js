@@ -12,7 +12,10 @@ export async function POST(request) {
     }
 
     if (!reason) {
-      return NextResponse.json({ message: 'reason is required for return' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'reason is required for return' },
+        { status: 400 }
+      );
     }
 
     const connection = await dbConfig.getConnection();
@@ -51,6 +54,9 @@ export async function POST(request) {
       connection.release();
     }
   } catch (error) {
-    return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Error', error: error.message },
+      { status: 500 }
+    );
   }
 }

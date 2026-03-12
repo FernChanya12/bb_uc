@@ -1,7 +1,6 @@
 import dbConfig from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-// POST - อนุมัติ BOQ: เพิ่ม log status A และอัปเดต boq_item status A
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -47,6 +46,9 @@ export async function POST(request) {
       connection.release();
     }
   } catch (error) {
-    return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Error', error: error.message },
+      { status: 500 }
+    );
   }
 }

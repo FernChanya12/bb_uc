@@ -12,23 +12,39 @@ const BASE_URL = "http://localhost:3000/api";
 const ApiService = {
   callData: (params) => {
     const query = new URLSearchParams(params).toString();
-    return fetch(`${BASE_URL}/ucHeader?${query}`).then((r) => r.json());
+    return fetch(`${BASE_URL}/boqApproving?${query}`).then((r) => r.json());
   },
-  createItem: (data) =>
-    fetch(`${BASE_URL}/ucHeader`, {
+  getDetailByUid: (uid) => {
+    return fetch(`${BASE_URL}/boqApproving/detail?${uid}`).then((r) => r.json());
+  },
+  aprove: (data) =>
+    fetch(`${BASE_URL}/boqApproving/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        created_by: 'admin',
+      }),
     }).then((r) => r.json()),
-  updateItem: (data) =>
-    fetch(`${BASE_URL}/ucHeader`, {
-      method: "PUT",
+  reject: (data) =>
+    fetch(`${BASE_URL}/boqApproving/inapprove`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        reason: data.remark,
+        created_by: 'admin',
+      }),
     }).then((r) => r.json()),
-  deleteItem: (uid) =>
-    fetch(`${BASE_URL}/ucHeader?UID=${uid}`, {
-      method: "DELETE",
+  sendback: (data) =>
+    fetch(`${BASE_URL}/boqApproving/return`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        boq_uid: data.selectedUids,
+        reason: data.remark,
+        created_by: 'admin',
+      }),
     }).then((r) => r.json()),
 };
 
@@ -42,13 +58,6 @@ const IconX = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
-const IconRefresh = ({ className = "w-4 h-4" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-);
-
 const IconFilter = () => (
   <svg
     width="1em" height="1em" viewBox="0 0 24 24" fill="none"
@@ -56,13 +65,6 @@ const IconFilter = () => (
     style={{ display: "inline-block", verticalAlign: "middle" }}
   >
     <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-  </svg>
-);
-
-const IconAdd = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14M5 12h14" />
   </svg>
 );
 
@@ -125,35 +127,6 @@ function Modal({ show, onClose, title, children, footer }) {
 }
 
 // ============================================================
-// ItemForm Component
-// ============================================================
-function ItemForm({ item, onChange, unitList }) {
-  return (
-    <>
-      <label className="text-label">ชื่อวัสดุ</label>
-      <input className="custom-input" type="text" value={item.header_name} placeholder="ชื่อวัสดุ" onChange={(e) => onChange({ ...item, header_name: e.target.value })} />
-
-      <label className="text-label mt-3">UOM</label>
-      <select value={item.unitId} onChange={(e) => onChange({ ...item, unitId: e.target.value })}
-        className="custom-input"
-        placeholder="ค้นหา">
-        <option value="">กรุณาเลือก</option>
-        {unitList.map((unit) => (
-          <option key={unit.value} value={unit.value}>
-            {unit.label}
-          </option>
-        ))}
-      </select>
-
-      <label className="text-label mt-3">รหัสกระทรวงพาณิชย์</label>
-      <input className="custom-input" type="text" value={item.header_code} placeholder="รหัสกระทรวงพาณิชย์" onChange={(e) => onChange({ ...item, header_code: e.target.value })} />
-
-
-    </>
-  );
-}
-
-// ============================================================
 // Main BudgetApp Component
 // ============================================================
 const EMPTY_ITEM = { header_name: "", header_code: "", fiscal: "2568", unitId: "", remark: "" };
@@ -162,12 +135,10 @@ const EMPTY_FILTERS = { header_name: "", header_code: "", unitId: "", itemStatus
 export default function BudgetApp() {
   // Data
   const [items, setItems] = useState([]);
+  const [itemsDetail, setItemsDetail] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [unitList, setUnits] = useState([]);
   const [activeMenu, setActiveMenu] = useState(null);
-
-  // Selection
-  const [selectedUids, setSelectedUids] = useState(new Set());
 
   // Filters
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -175,20 +146,29 @@ export default function BudgetApp() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPageDetail, setCurrentPageDetail] = useState(1);
+  const [itemsPerPageDetail, setItemsPerPageDetail] = useState(10);
 
   // Modal
-  const [showDialog, setShowDialog] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingUid, setEditingUid] = useState(null);
   const [formItem, setFormItem] = useState(EMPTY_ITEM);
+  const [showTable, setShowTable] = useState(true);
+  const [showDetail, setShowDetail] = useState(false);
+
 
   // Derived
   const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const pagedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const allSelected = items.length > 0 && selectedUids.size === items.length;
-  const someSelected = selectedUids.size > 0 && !allSelected;
+
+  //DetailPaginator
+  const totalItemsDetail = itemsDetail.length;
+  const totalPagesDetail = Math.ceil(totalItemsDetail / itemsPerPageDetail);
+  const pagedItemsDetail = itemsDetail.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const [selectedUids, setSelectedUids] = useState([]);
+  const allSelected = pagedItemsDetail.length > 0 && pagedItemsDetail.every(i => selectedUids.includes(i.UID));
 
   // ── Load Data ────────────────────────────────────────────
   const loadData = useCallback(async (f = filters) => {
@@ -203,7 +183,6 @@ export default function BudgetApp() {
       if (res) {
         setItems(res);
         setCurrentPage(1);
-        setSelectedUids(new Set());
       } else {
         Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาดในการโหลดข้อมูล", "error");
       }
@@ -236,6 +215,26 @@ export default function BudgetApp() {
     loadUnitList();
   }, []);
 
+  const getDetail = useCallback(async (uid) => {
+    setIsLoading(true);
+    try {
+
+      const res = await ApiService.getDetailByUid(uid);
+      if (res) {
+        setItemsDetail(res.boq_item);
+        setCurrentPage(1);
+        setShowTable(false);
+        setShowDetail(true);
+      } else {
+        Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาดในการโหลดข้อมูล", "error");
+      }
+    } catch {
+      Swal.fire("ผิดพลาด!", "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // ── Filter handlers ──────────────────────────────────────
   const handleFilterChange = (key, value) => {
     const next = { ...filters, [key]: value };
@@ -252,43 +251,33 @@ export default function BudgetApp() {
     loadData(EMPTY_FILTERS);
   };
 
-  // ── CRUD ─────────────────────────────────────────────────
-  const openNewDialog = () => {
-    setIsEditMode(false);
-    setEditingUid(null);
-    setFormItem(EMPTY_ITEM);
-    setShowDialog(true);
+  const handleCheckAll = () => {
+    if (allSelected) {
+      setSelectedUids([]);
+    } else {
+      setSelectedUids(pagedItemsDetail.map(i => i.UID));
+    }
   };
 
-  const openEditDialog = (item) => {
-    setIsEditMode(true);
-    setEditingUid(item.UID);
-    setFormItem(item);
-    setShowDialog(true);
+  const handleCheck = (uid) => {
+    setSelectedUids(prev =>
+      prev.includes(uid)
+        ? prev.filter(id => id !== uid)
+        : [...prev, uid]
+    );
   };
 
-  const saveItem = async () => {
-    if (!formItem.header_name) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก ชื่อวัสดุ", "warning");
+  const onApprove = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
       return;
     }
-
-    if (!formItem.unitId) {
-      Swal.fire("แจ้งเตือน", "กรุณาเลือก UOM", "warning");
-      return;
-    }
-
-    if (!formItem.header_code) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก รหัสกระทรวงพาณิชย์", "warning");
-      return;
-    }
-
     const result = await Swal.fire({
-      title: "ยืนยันการบันทึก",
-      text: "ต้องการบันทึกข้อมูลนี้หรือไม่?",
+      title: "ยืนยันการอนุมัติ",
+      text: "ต้องการอนุมัติข้อมูลนี้หรือไม่?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "บันทึก",
+      confirmButtonText: "ยืนยัน",
       cancelButtonText: "ยกเลิก",
       buttonsStyling: false,
       customClass: {
@@ -300,57 +289,132 @@ export default function BudgetApp() {
     if (result.isConfirmed) {
       setIsLoading(true);
       try {
-        const res = isEditMode
-          ? await ApiService.updateItem({ UID: editingUid, ...formItem })
-          : await ApiService.createItem(formItem);
-
+        const param = {
+          selectedUids: selectedUids,
+        }
+        const res = await ApiService.aprove(param);
         if (res) {
-          setShowDialog(false);
-          Swal.fire("สำเร็จ!", "บันทึกข้อมูลสำเร็จ", "success");
-          loadData(filters);
+          Swal.fire("สำเร็จ!", "อนุมัติข้อมูลสำเร็จ", "success");
+          setSelectedUids([]);
+          getDetail();
         } else {
           Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
         }
       } catch {
-        Swal.fire("ผิดพลาด!", isEditMode ? "ไม่สามารถแก้ไขข้อมูลได้" : "ไม่สามารถบันทึกข้อมูลได้", "error");
+        Swal.fire("ผิดพลาด!", "ไม่สามารถอนุมัติข้อมูลได้", "error");
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  const deleteSelected = async (uid) => {
-    const result = await Swal.fire({
-      title: "ยืนยันการลบ",
-      text: "ต้องการลบข้อมูลนี้หรือไม่?",
-      icon: "warning",
+  const onReject = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
+      return;
+    }
+
+    const { value, isConfirmed } = await Swal.fire({
+      title: 'ไม่อนุมัติ',
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'ระบุเหตุผล',
+      inputPlaceholder: 'ระบุเหตุผล',
+      inputAttributes: { required: true },
       showCancelButton: true,
-      confirmButtonText: "ยืนยัน",
-      cancelButtonText: "ยกเลิก",
-      buttonsStyling: false,  // ปิด style default ของ Swal
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false,
       customClass: {
         confirmButton: "sweet-confirm mr-2",
         cancelButton: "sweet-cancel",
+        inputLabel: 'sweet-input-label',
+      },
+      preConfirm: (val) => {
+        if (!val) Swal.showValidationMessage('กรุณาระบุเหตุผล');
+        return val;
       },
     });
 
-    if (result.isConfirmed) {
+    if (isConfirmed && value) {
       setIsLoading(true);
       try {
-        const res = await ApiService.deleteItem(uid);
+        const param = {
+          selectedUids: selectedUids,
+          remark: value
+        }
+        const res = await ApiService.reject(param);
         if (res) {
-          Swal.fire("สำเร็จ!", "ลบข้อมูลสำเร็จ", "success");
-          setSelectedUids(new Set());
-          loadData(filters);
+          Swal.fire("สำเร็จ!", "ไม่อนุมัติข้อมูลสำเร็จ", "success");
+          setSelectedUids([]);
+          getDetail();
         } else {
           Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
         }
       } catch {
-        Swal.fire("ผิดพลาด!", "ไม่สามารถลบข้อมูลได้", "error");
+        Swal.fire("ผิดพลาด!", "ไม่สามารถไม่อนุมัติข้อมูลได้", "error");
       } finally {
         setIsLoading(false);
       }
     }
+  };
+
+  const onSendBack = async () => {
+    if (selectedUids.length === 0) {
+      Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการ', 'warning');
+      return;
+    }
+
+    const { value, isConfirmed } = await Swal.fire({
+      title: 'ส่งกลับแก้ไข',
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'ระบุเหตุผล',
+      inputPlaceholder: 'ระบุเหตุผล',
+      inputAttributes: { required: true },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false,
+      customClass: {
+        confirmButton: "sweet-confirm mr-2",
+        cancelButton: "sweet-cancel",
+        inputLabel: 'sweet-input-label',
+      },
+      preConfirm: (val) => {
+        if (!val) Swal.showValidationMessage('กรุณาระบุเหตุผล');
+        return val;
+      },
+    });
+
+    if (isConfirmed && value) {
+      setIsLoading(true);
+      try {
+        const param = {
+          selectedUids: selectedUids,
+          remark: value
+        }
+        const res = await ApiService.sendback(param);
+        if (res) {
+          Swal.fire("สำเร็จ!", "ส่งกลับแก้ไขข้อมูลสำเร็จ", "success");
+          setSelectedUids([]);
+          getDetail();
+        } else {
+          Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
+        }
+      } catch {
+        Swal.fire("ผิดพลาด!", "ไม่สามารถส่งกลับแก้ไขข้อมูลได้", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const statusConfig = {
+    S: { label: 'รอพิจารณา', className: 'bg-blue-100 text-blue-600' },
+    A: { label: 'อนุมัติ', className: 'bg-green-100 text-green-600' },
+    R: { label: 'ส่งกลับแก้ไข', className: 'bg-yellow-100 text-yellow-600' },
+    W: { label: 'รอรับทราบ', className: 'bg-gray-100 text-gray-500' },
   };
 
   // ── Pagination ───────────────────────────────────────────
@@ -368,6 +432,12 @@ export default function BudgetApp() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const backTotable = () => {
+    loadData();
+    setShowTable(true);
+    setShowDetail(false);
+  }
+
   // ── Status color ─────────────────────────────────────────
   const statusClass = (s) =>
     s === "active" ? "text-green-600" : s === "inactive" ? "text-gray-600" : "text-yellow-600";
@@ -380,170 +450,237 @@ export default function BudgetApp() {
         <div className="text-black text-2xl font-medium mb-3">รายการพิจารณา</div>
 
         {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
+        {showTable && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
 
-          <SearchInput
-            value={filters.searchText}
-            onSearch={(val) => loadData(filters)}
-            placeholder="ค้นหารายการ..."
-          />
+            <SearchInput
+              value={filters.searchText}
+              onSearch={(val) => loadData(filters)}
+              placeholder="ค้นหารายการ..."
+            />
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-4">
-            <button
-              className="button-primary">
-              ส่งออกรายงาน
-            </button>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-4">
+              <button
+                className="button-primary">
+                ส่งออกรายงาน
+              </button>
 
-            <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
-              <IconFilter />
-              ตัวกรอง
-            </button>
-          </div>
-
-          <FilterDrawer
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            onSearch={searchFilter}
-            onClear={clearFilters}
-          >
-            <div className="grid grid-cols-1 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
-                <input type="text" value={filters.header_name}
-                  onChange={(e) => handleFilterChange("header_name", e.target.value)}
-                  className="custom-input"
-                  placeholder="วัสดุ..." />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
-                <input type="text" value={filters.header_code}
-                  onChange={(e) => handleFilterChange("header_code", e.target.value)}
-                  className="custom-input"
-                  placeholder="รหัสกระทรวงพาณิชย์" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
-                <select value={filters.unitId}
-                  onChange={(e) => handleFilterChange("unitId", e.target.value)}
-                  className="custom-input"
-                  placeholder="ค้นหา">
-                  <option value="">ทั้งหมด</option>
-                  {unitList.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
+                <IconFilter />
+                ตัวกรอง
+              </button>
             </div>
-          </FilterDrawer>
-        </div>
+
+            <FilterDrawer
+              open={drawerOpen}
+              onClose={() => setDrawerOpen(false)}
+              onSearch={searchFilter}
+              onClear={clearFilters}
+            >
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">สถานะการอนุมัติ</label>
+                  <select value={filters.status}
+                    onChange={(e) => handleFilterChange("status", e.target.value)}
+                    className="custom-input"
+                    placeholder="ค้นหา">
+                    <option value="">ทั้งหมด</option>
+                    <option value="S">รอพิจารณา</option>
+                    <option value="A">อนุมัติ</option>
+                    <option value="R">ส่งกลับแก้ไข</option>
+                    <option value="W">รอรับทราบ</option>
+                  </select>
+                </div>
+              </div>
+            </FilterDrawer>
+          </div>
+        )}
+
+        {showDetail && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between gap-5">
+            <button className="button-primary-border" onClick={() => backTotable()}>
+              ย้อนกลับ
+            </button>
+
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-4">
+              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => onSendBack(true)}>
+                ส่งกลับแก้ไข
+              </button>
+              <button className="button-primary-border" style={{ width: "120px" }} onClick={() => onReject(true)}>
+                ไม่อนุมัติ
+              </button>
+              <button
+                className="button-primary" style={{ width: "120px" }} onClick={() => onApprove(true)}>
+                อนุมัติ
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Data Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="modern-table w-full text-black">
-              <thead className="bg-gray-50/50">
-                <tr>
-                  {["", "No.", "รหัส", "ปี", "ประเภท", "รายการ"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {isLoading ? (
+        {showTable && (
+          <div className="bg-white rounded-lg shadow-sm p-6 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="modern-table w-full text-black">
+                <thead className="bg-gray-50/50">
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">กำลังโหลด...</td>
+                    <th className="w-10"></th>
+                    <th className="w-10">เลขที่สัญญา</th>
+                    <th className="w-80">ชื่อโครงการ</th>
+                    <th className="w-30">สถานะ</th>
+                    <th className="w-30">สถานะการอนุมัติ</th>
                   </tr>
-                ) : pagedItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">ไม่พบข้อมูล</td>
-                  </tr>
-                ) : (
-                  pagedItems.map((item, idx) => (
-                    <tr key={item.UID ?? idx}
-                      className={`cursor-pointer transition-colors hover:bg-yellow-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                    >
-                      <td>
-                        <KebabMenu
-                          itemId={item.UID}
-                          activeMenu={activeMenu}
-                          setActiveMenu={setActiveMenu}
-                        >
-                          <button
-                            className="kebab-menu-item w-full"
-                            onClick={() => openEditDialog(item)}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            <span>แก้ไขรายการ</span>
-                          </button>
-                        </KebabMenu>
-                      </td>
-                      <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
-                        {(currentPage - 1) * itemsPerPage + idx + 1}
-                      </td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_code}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.fiscal}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_type}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_name}</td>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">กำลังโหลด...</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : pagedItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">ไม่พบข้อมูล</td>
+                    </tr>
+                  ) : (
+                    pagedItems.map((item, idx) => (
+                      <tr key={item.UID ?? idx}
+                        className={`cursor-pointer transition-colors hover:bg-yellow-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                      >
+                        <td>
+                          <KebabMenu
+                            itemId={item.UID}
+                            activeMenu={activeMenu}
+                            setActiveMenu={setActiveMenu}
+                          >
+                            <button
+                              className="kebab-menu-item w-full"
+                              onClick={() => getDetail(item.UID)}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                              <span>แก้ไขรายการ</span>
+                            </button>
+                          </KebabMenu>
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
+                          {item.report_id}
+                        </td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">
+                          <div>{item.boq_name}</div>
+                          <div>{item.boq_detail}</div>
+                        </td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">
+                          <div className="grid place-content-center">
+                            <div className="px-3 py-1 rounded-2xl text-center w-fit text-sm" style={{ backgroundColor: "#E7F7F1", color: "#5B975D" }}>{item.approveCount ?? "0"}/{item.count ?? "0"}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">
+                          <div className="grid place-content-center">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[item.status]?.className ?? 'bg-gray-100 text-gray-400'}`}>
+                              {statusConfig[item.status]?.label ?? '-'}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              changeItemsPerPage={changeItemsPerPage}
+              goToPage={goToPage}
+            />
           </div>
+        )}
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            changeItemsPerPage={changeItemsPerPage}
-            goToPage={goToPage}
-          />
-        </div>
+        {/* Detail */}
+        {showDetail && (
+          <div className="bg-white rounded-lg shadow-sm p-6 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="modern-table w-full text-black">
+                <thead className="bg-gray-50/50">
+                  <tr>
+                    <th className="w-10">
+                      <input className="custom-checkbox"
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={handleCheckAll}
+                      />
+                    </th>
+                    <th className="w-10">No.</th>
+                    <th className="w-30">ID</th>
+                    <th className="w-30">ประเภทสิ่งก่อสร้าง</th>
+                    <th className="w-60">ชื่อรายการ</th>
+                    <th className="w-30">พื้นที่/ระยะทาง</th>
+                    <th className="w-30">ค่าวัสดุ</th>
+                    <th className="w-30">ค่าแรง</th>
+                    <th className="w-30">ราคารวม</th>
+                    <th className="w-30">แก้ไขโดย</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">กำลังโหลด...</td>
+                    </tr>
+                  ) : pagedItemsDetail.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 text-sm">ไม่พบข้อมูล</td>
+                    </tr>
+                  ) : (
+                    pagedItemsDetail.map((item, idx) => (
+                      <tr key={item.UID ?? idx}
+                        className={`cursor-pointer transition-colors hover:bg-yellow-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                      >
+                        <td>
+                          <div className="grid place-content-center">
+                            <input className="custom-checkbox"
+                              type="checkbox" disabled={item.status != "S"}
+                              checked={selectedUids.includes(item.UID)}
+                              onChange={() => handleCheck(item.UID)}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
+                          {(currentPageDetail - 1) * itemsPerPageDetail + idx + 1}
+                        </td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.item_code}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.item_type}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.remark}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.price}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.name}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.total}</td>
+                        <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.updated_by}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Add/Edit Modal */}
-        <Modal
-          show={showDialog}
-          onClose={() => setShowDialog(false)}
-          title={isEditMode ? "แก้ไขวัสดุ" : "เพิ่มวัสดุ"}
-          footer={
-            <>
-              <button type="button" onClick={() => setShowDialog(false)} style={{ width: "100px" }}
-                className="button-primary-border">
-                ยกเลิก
-              </button>
-              <button type="button" onClick={saveItem} style={{ width: "100px" }}
-                className="button-primary">
-                บันทึก
-              </button>
-            </>
-          }
-        >
-          <ItemForm item={formItem} onChange={setFormItem} unitList={unitList} />
-        </Modal>
-
-        {/* Success Modal */}
-        <Modal show={showSuccess} onClose={() => { setShowSuccess(false); setShowDialog(false); }} title="">
-          <div className="text-center py-2">
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">บันทึกสำเร็จ</h3>
-            <p className="text-gray-600 mb-6">ข้อมูลถูกบันทึกเรียบร้อยแล้ว</p>
-            <button type="button" onClick={() => { setShowSuccess(false); setShowDialog(false); }}
-              className="px-8 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              ตกลง
-            </button>
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPageDetail}
+              totalPages={totalPagesDetail}
+              totalItems={totalItemsDetail}
+              itemsPerPage={itemsPerPageDetail}
+              changeItemsPerPage={changeItemsPerPage}
+              goToPage={goToPage}
+            />
           </div>
-        </Modal>
+        )}
 
       </div>
     </div>

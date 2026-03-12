@@ -448,16 +448,18 @@ export default function BudgetApp() {
         </div>
 
         {/* Data Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm p-6 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="modern-table w-full text-black">
               <thead className="bg-gray-50/50">
                 <tr>
-                  {["", "No.", "รหัส", "ปี", "ประเภท", "รายการ"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      {h}
-                    </th>
-                  ))}
+                  <th className="w-10"></th>
+                  <th className="w-10">No.</th>
+                  <th className="w-30">รหัส</th>
+                  <th className="w-30">ปี</th>
+                  <th className="w-30">ประเภท</th>
+                  <th className="w-80">รายการ</th>
+                  <th className="w-30">สถานะ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -504,10 +506,17 @@ export default function BudgetApp() {
                       <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_code}</td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.fiscal}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.header_code}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.fiscal}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_type}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_name}</td>
+                      <td className="px-6 py-4 align-middle text-sm text-gray-900">
+                        <div className="grid place-content-center">
+                          <div className={item.status === 'T' ? 'active-badge' : 'inactive-badge'}>
+                            {item.status == 'T' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                          </div>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
