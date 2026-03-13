@@ -16,7 +16,7 @@ export async function GET(request) {
 
       // result set 1: ข้อมูล BOQ (root)
       const [boqRows] = await connection.query(
-        'SELECT boq_id, fiscal, boq_name, boq_detail, boq_group, status, remark FROM uc_boq WHERE boq_id = ?',
+        'SELECT boq_id, fiscal, boq_name, boq_detail, boq_group, status, remark FROM UC.uc_boq WHERE boq_id = ?',
         [boqId]
       );
 
@@ -27,7 +27,7 @@ export async function GET(request) {
 
       // result set 2: header ทั้งหมดภายใต้ boq นี้
       const [headers] = await connection.query(
-        'SELECT boq_header_id, fiscal, header_code, boq_code, header_uplevel, status, remark, created_by, created_date, updated_by, updated_date FROM boq_header WHERE boq_code = ?',
+        'SELECT boq_header_id, fiscal, header_code, boq_code, header_uplevel, status, remark, created_by, created_date, updated_by, updated_date FROM UC.boq_header WHERE boq_code = ?',
         [boqId]
       );
 
@@ -36,8 +36,8 @@ export async function GET(request) {
         `SELECT bi.boq_item_id, bi.fiscal, bi.boq_header_code, bi.item_code, bi.item_uplevel,
                 bi.price, bi.status, bi.remark,
                 bi.created_by, bi.created_date, bi.updated_by, bi.updated_date
-         FROM boq_item bi
-         INNER JOIN boq_header bh ON bi.boq_header_code = bh.boq_header_id
+         FROM UC.boq_item bi
+         INNER JOIN UC.boq_header bh ON bi.boq_header_code = bh.boq_header_id
          WHERE bh.boq_code = ?`,
         [boqId]
       );

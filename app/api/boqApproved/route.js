@@ -15,10 +15,10 @@ export async function GET(request) {
     try {
 
       if (!table) {
-        const [groups] = await connection.query('SELECT * FROM uc_group WHERE status = ?', ['T']);
-        const [boqs] = await connection.query('SELECT * FROM uc_boq WHERE status = ?', ['T']);
-        const [headers] = await connection.query('SELECT * FROM boq_header WHERE status = ?', ['T']);
-        const [items] = await connection.query('SELECT * FROM boq_item WHERE status = ?', ['T']);
+        const [groups] = await connection.query('SELECT * FROM UC.uc_group WHERE status = ?', ['T']);
+        const [boqs] = await connection.query('SELECT * FROM UC.uc_boq WHERE status = ?', ['T']);
+        const [headers] = await connection.query('SELECT * FROM UC.boq_header WHERE status = ?', ['T']);
+        const [items] = await connection.query('SELECT * FROM UC.boq_item WHERE status = ?', ['T']);
         return NextResponse.json({ uc_group: groups, uc_boq: boqs, boq_header: headers, boq_item: items }, { status: 200 });
       }
 
@@ -29,18 +29,18 @@ export async function GET(request) {
 
       let rows;
       if (table === 'boq_header' && boqId) {
-        [rows] = await connection.query('SELECT * FROM boq_header WHERE boq_code = ? AND status = ?', [boqId, 'T']);
+        [rows] = await connection.query('SELECT * FROM UC.boq_header WHERE boq_code = ? AND status = ?', [boqId, 'T']);
       } else if (table === 'boq_item' && boqId) {
         [rows] = await connection.query(
-          'SELECT bi.* FROM boq_item bi JOIN boq_header bh ON bi.boq_header_code = bh.header_code WHERE bh.boq_code = ? AND bi.status = ?',
+          'SELECT bi.* FROM UC.boq_item bi JOIN UC.boq_header bh ON bi.boq_header_code = bh.header_code WHERE bh.boq_code = ? AND bi.status = ?',
           [boqId, 'T']
         );
       } else if (table === 'uc_boq' && boqId) {
-        [rows] = await connection.query('SELECT * FROM uc_boq WHERE boq_id = ?', [boqId]);
+        [rows] = await connection.query('SELECT * FROM UC.uc_boq WHERE boq_id = ?', [boqId]);
       } else if (table === 'uc_group') {
-        [rows] = await connection.query('SELECT * FROM uc_group WHERE status = ?', ['T']);
+        [rows] = await connection.query('SELECT * FROM UC.uc_group WHERE status = ?', ['T']);
       } else {
-        [rows] = await connection.query(`SELECT * FROM ${table} WHERE status = ?`, ['T']);
+        [rows] = await connection.query(`SELECT * FROM UC.${table} WHERE status = ?`, ['T']);
       }
 
       return NextResponse.json(rows, { status: 200 });

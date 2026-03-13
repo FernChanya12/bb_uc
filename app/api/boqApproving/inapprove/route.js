@@ -26,16 +26,16 @@ export async function POST(request) {
 
       // 1. Insert approve log status I
       await connection.query(
-        `INSERT INTO boq_approve_log (boq_log_id, boq_id, report_id, status, reason, remark, created_date, created_by, updated_date, updated_by)
+        `INSERT INTO UC.boq_approve_log (boq_log_id, boq_id, report_id, status, reason, remark, created_date, created_by, updated_date, updated_by)
          VALUES (?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE, ?)`,
         [boqLogId, boq_id, report_id || null, 'I', reason, remark || null, created_by, created_by]
       );
 
       // 2. อัปเดต boq_item status = 'I' ผ่าน boq_header
       const [result] = await connection.query(
-        `UPDATE boq_item
+        `UPDATE UC.boq_item
          SET status = ?, updated_date = SYSDATE, updated_by = ?
-         WHERE boq_header_code IN (SELECT header_code FROM boq_header WHERE boq_code = ?)`,
+         WHERE boq_header_code IN (SELECT header_code FROM UC.boq_header WHERE boq_code = ?)`,
         ['I', created_by, boq_id]
       );
 

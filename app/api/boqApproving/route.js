@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const connection = await dbConfig.getConnection();
     try {
-      const [rows] = await connection.query('SELECT * FROM uc_boq WHERE status != ?', ['F']);
+      const [rows] = await connection.query('SELECT * FROM UC.uc_boq WHERE status != ?', ['F']);
       return NextResponse.json(rows, { status: 200 });
     } finally {
       connection.release();

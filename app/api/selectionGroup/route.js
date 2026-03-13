@@ -7,7 +7,7 @@ export async function GET() {
     const connection = await dbConfig.getConnection();
     try {
       const [rows] = await connection.query(
-        'SELECT group_id, group_code, group_name FROM uc_group WHERE status = ?',
+        'SELECT group_id, group_code, group_name FROM UC.uc_group WHERE status = ?',
         ['T']
       );
       return NextResponse.json(rows, { status: 200 });

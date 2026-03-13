@@ -9,7 +9,7 @@ export async function GET(request) {
     const headerUplevel = searchParams.get('header_uplevel');
     const groupCode = searchParams.get('group_code');
 
-    let sql = 'SELECT * FROM uc_header WHERE status = ?';
+    let sql = 'SELECT * FROM UC.uc_header WHERE status = ?';
     const params = ['T'];
 
     if (headerType) {
@@ -43,7 +43,7 @@ export async function POST(request) {
     const body = await request.json();
     const headerId = body.header_id || crypto.randomUUID();
 
-    const sql = `INSERT INTO uc_header (header_id, fiscal, header_code, header_name, header_type, header_uplevel, group_code, cal_id, status, remark, created_by, created_date, updated_by, updated_date)
+    const sql = `INSERT INTO UC.uc_header (header_id, fiscal, header_code, header_name, header_type, header_uplevel, group_code, cal_id, status, remark, created_by, created_date, updated_by, updated_date)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE)`;
     const params = [
       headerId,
@@ -62,7 +62,7 @@ export async function POST(request) {
 
     await dbConfig.query(sql, params);
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_header WHERE header_id = ?', [headerId]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_header WHERE header_id = ?', [headerId]);
     return NextResponse.json(rows[0], { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -77,7 +77,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'header_id is required' }, { status: 400 });
     }
 
-    const sql = `UPDATE uc_header SET fiscal = ?, header_code = ?, header_name = ?, header_type = ?, header_uplevel = ?, group_code = ?, cal_id = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE header_id = ?`;
+    const sql = `UPDATE UC.uc_header SET fiscal = ?, header_code = ?, header_name = ?, header_type = ?, header_uplevel = ?, group_code = ?, cal_id = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE header_id = ?`;
     const params = [
       body.fiscal || null,
       body.header_code || null,
@@ -97,7 +97,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_header WHERE header_id = ?', [body.header_id]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_header WHERE header_id = ?', [body.header_id]);
     return NextResponse.json(rows[0], { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -115,7 +115,7 @@ export async function DELETE(request) {
     }
 
     const [result] = await dbConfig.query(
-      'UPDATE uc_header SET status = ?, updated_date = SYSDATE WHERE header_id = ?',
+      'UPDATE UC.uc_header SET status = ?, updated_date = SYSDATE WHERE header_id = ?',
       ['F', headerId]
     );
     if (result.affectedRows === 0) {

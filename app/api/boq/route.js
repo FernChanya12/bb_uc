@@ -28,8 +28,8 @@ export async function GET(request) {
       params.push(boqGroup);
     }
 
-    const dataSql = `SELECT boq_id, fiscal, boq_name, boq_detail, boq_group, price, status, remark, created_by, created_date, updated_by, updated_date FROM uc_boq ${where} OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`;
-    const countSql = `SELECT COUNT(*) AS "totalCount" FROM uc_boq ${where}`;
+    const dataSql = `SELECT boq_id, fiscal, boq_name, boq_detail, boq_group, price, status, remark, created_by, created_date, updated_by, updated_date FROM UC.uc_boq ${where} OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`;
+    const countSql = `SELECT COUNT(*) AS "totalCount" FROM UC.uc_boq ${where}`;
 
     const connection = await dbConfig.getConnection();
     try {
@@ -51,7 +51,7 @@ export async function POST(request) {
     const body = await request.json();
     const boqId = body.boq_id || crypto.randomUUID();
 
-    const sql = `INSERT INTO uc_boq (boq_id, fiscal, boq_name, boq_detail, boq_group, price, status, remark, created_by, created_date, updated_by, updated_date)
+    const sql = `INSERT INTO UC.uc_boq (boq_id, fiscal, boq_name, boq_detail, boq_group, price, status, remark, created_by, created_date, updated_by, updated_date)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE)`;
     const params = [
       boqId,
@@ -68,7 +68,7 @@ export async function POST(request) {
 
     await dbConfig.query(sql, params);
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_boq WHERE boq_id = ?', [boqId]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_boq WHERE boq_id = ?', [boqId]);
     return NextResponse.json(rows[0], { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -83,7 +83,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'boq_id is required' }, { status: 400 });
     }
 
-    const sql = `UPDATE uc_boq SET fiscal = ?, boq_name = ?, boq_detail = ?, boq_group = ?, price = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE boq_id = ?`;
+    const sql = `UPDATE UC.uc_boq SET fiscal = ?, boq_name = ?, boq_detail = ?, boq_group = ?, price = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE boq_id = ?`;
     const params = [
       body.fiscal || null,
       body.boq_name || null,
@@ -101,7 +101,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_boq WHERE boq_id = ?', [body.boq_id]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_boq WHERE boq_id = ?', [body.boq_id]);
     return NextResponse.json(rows[0], { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -119,7 +119,7 @@ export async function DELETE(request) {
     }
 
     const [result] = await dbConfig.query(
-      'UPDATE uc_boq SET status = ?, updated_date = SYSDATE WHERE boq_id = ?',
+      'UPDATE UC.uc_boq SET status = ?, updated_date = SYSDATE WHERE boq_id = ?',
       ['F', boqId]
     );
     if (result.affectedRows === 0) {

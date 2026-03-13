@@ -8,7 +8,7 @@ export async function GET(request) {
     const itemType = searchParams.get('item_type');
     const headerCode = searchParams.get('header_code');
 
-    let sql = 'SELECT * FROM uc_item WHERE status = ?';
+    let sql = 'SELECT * FROM UC.uc_item WHERE status = ?';
     const params = ['T'];
 
     if (itemType) {
@@ -38,7 +38,7 @@ export async function POST(request) {
     const body = await request.json();
     const itemId = body.item_id || crypto.randomUUID();
 
-    const sql = `INSERT INTO uc_item (item_id, fiscal, item_code, item_name, item_type, id_uplevel, unit_code, header_code, price, status, remark, created_by, created_date, updated_by, updated_date)
+    const sql = `INSERT INTO UC.uc_item (item_id, fiscal, item_code, item_name, item_type, id_uplevel, unit_code, header_code, price, status, remark, created_by, created_date, updated_by, updated_date)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE)`;
     const params = [
       itemId,
@@ -58,7 +58,7 @@ export async function POST(request) {
 
     await dbConfig.query(sql, params);
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_item WHERE item_id = ?', [itemId]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_item WHERE item_id = ?', [itemId]);
     return NextResponse.json(rows[0], { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -73,7 +73,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'item_id is required' }, { status: 400 });
     }
 
-    const sql = `UPDATE uc_item SET fiscal = ?, item_code = ?, item_name = ?, item_type = ?, id_uplevel = ?, unit_code = ?, header_code = ?, price = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE item_id = ?`;
+    const sql = `UPDATE UC.uc_item SET fiscal = ?, item_code = ?, item_name = ?, item_type = ?, id_uplevel = ?, unit_code = ?, header_code = ?, price = ?, status = ?, remark = ?, updated_by = ?, updated_date = SYSDATE WHERE item_id = ?`;
     const params = [
       body.fiscal || null,
       body.item_code || null,
@@ -94,7 +94,7 @@ export async function PUT(request) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    const [rows] = await dbConfig.query('SELECT * FROM uc_item WHERE item_id = ?', [body.item_id]);
+    const [rows] = await dbConfig.query('SELECT * FROM UC.uc_item WHERE item_id = ?', [body.item_id]);
     return NextResponse.json(rows[0], { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
@@ -112,7 +112,7 @@ export async function DELETE(request) {
     }
 
     const [result] = await dbConfig.query(
-      'UPDATE uc_item SET status = ?, updated_date = SYSDATE WHERE item_id = ?',
+      'UPDATE UC.uc_item SET status = ?, updated_date = SYSDATE WHERE item_id = ?',
       ['F', itemId]
     );
     if (result.affectedRows === 0) {

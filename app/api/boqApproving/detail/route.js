@@ -13,22 +13,22 @@ export async function GET(request) {
       let boqList, headerList, itemList;
 
       if (boqId) {
-        [boqList] = await connection.query('SELECT * FROM uc_boq WHERE boq_id = ?', [boqId]);
-        [headerList] = await connection.query('SELECT * FROM boq_header WHERE boq_code = ?', [boqId]);
+        [boqList] = await connection.query('SELECT * FROM UC.uc_boq WHERE boq_id = ?', [boqId]);
+        [headerList] = await connection.query('SELECT * FROM UC.boq_header WHERE boq_code = ?', [boqId]);
 
         if (headerList.length > 0) {
           const headerCodes = headerList.map((h) => h.header_code);
           [itemList] = await connection.query(
-            'SELECT * FROM boq_item WHERE boq_header_code IN (?)',
+            'SELECT * FROM UC.boq_item WHERE boq_header_code IN (?)',
             [headerCodes]
           );
         } else {
           itemList = [];
         }
       } else {
-        [boqList] = await connection.query('SELECT * FROM uc_boq');
-        [headerList] = await connection.query('SELECT * FROM boq_header');
-        [itemList] = await connection.query('SELECT * FROM boq_item');
+        [boqList] = await connection.query('SELECT * FROM UC.uc_boq');
+        [headerList] = await connection.query('SELECT * FROM UC.boq_header');
+        [itemList] = await connection.query('SELECT * FROM UC.boq_item');
       }
 
       return NextResponse.json(
