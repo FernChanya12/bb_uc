@@ -663,9 +663,9 @@ export default function BudgetApp() {
                       </th>                      
                       <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
                       <th className="px-6 py-3 text-center">ประเภท</th>
-                      <th className="px-6 py-3 text-center">
+                      <th className="px-6 py-3 text-center"> 
                         {currentLevel === 0 ? "หมวดหมู่" : "รายการ"}
-                      </th>
+                      </th> 
                       <th className="px-6 py-3 text-center">สถานะ</th>
                     </tr>
                   </thead>
