@@ -5,6 +5,8 @@ import Pagination from "@/app/components/pagination";
 import KebabMenu from "@/app/components/kebabMenu";
 import { FilterDrawer } from "../components/filter-slide";
 import { SearchInput } from "../components/search-input";
+import Swal from "sweetalert2";
+
 const API_BASE = "/api"; 
 
 const ApiService = {
@@ -25,7 +27,7 @@ const ApiService = {
       body: JSON.stringify(data),
     }).then((r) => r.json()),
   deleteItem: (uid) =>
-    fetch(`${API_BASE}/ucItem?UID=${uid}`, {
+    fetch(`${API_BASE}/boqApproved?UID=${uid}`, {
       method: "DELETE",
     }).then((r) => r.json()),
 };
@@ -137,8 +139,12 @@ export default function BudgetApp() {
     try {
       const tableOrder = ['uc_group', 'uc_boq', 'boq_header', 'boq_item'];
       const currentTable = tableOrder[level] || 'uc_group';
-      const queryObj = { table: currentTable };
-      if (pCode) {
+      const queryObj = { 
+      table: currentTable,
+      // เพิ่มบรรทัดนี้เพื่อส่งค่าค้นหาไปยัง API
+      search: f.searchText || "" 
+    };      
+    if (pCode) {
         queryObj.UID_PARENT = pCode; 
       }
 
@@ -180,7 +186,6 @@ export default function BudgetApp() {
   const totalItems = items.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const selectedItems = items.filter((i) => i.selected);
-
   const pagedItems = items.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -333,78 +338,39 @@ export default function BudgetApp() {
     setShowNewDialog(true);
   };
 
-  const saveNewItem = async () => {
-    if (!newItem.code) return alert("กรุณากรอกรหัส");
-    if (!newItem.itemName) return alert("กรุณากรอกชื่อรายการ");
-    if (!newItem.unit) return alert("กรุณาเลือกหน่วย");
-    if (!newItem.labor) return alert("กรุณาเลือกแรงงาน");
 
-    const body = {
-      fiscal: selectedYear,
-      seqId: newItem.code,
-      workItemName: newItem.itemName,
-      materialLevel1: newItem.material || null,
-      laborLevel1: newItem.labor,
-      price: (newItem.materialCost || 0) + (newItem.laborCost || 0),
-      unitId: newItem.unit,
-      itemStatus: "T",
-      remark: newItem.buildingGroup || null,
-    };
+ const deleteSelected = async (uid) => {
+    const result = await Swal.fire({
+      title: "ยืนยันการลบ",
+      text: "ต้องการลบข้อมูลนี้หรือไม่?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "ยืนยัน",
+      cancelButtonText: "ยกเลิก",
+      buttonsStyling: false,  // ปิด style default ของ Swal
+      customClass: {
+        confirmButton: "sweet-confirm mr-2",
+        cancelButton: "sweet-cancel",
+      },
+    });
 
-    try {
-      if (isEditMode) {
-        body.uid = items[editingIndex].uid;
-        const data = await res.json();
-        if (data.success) {
-          setShowSuccessDialog(true);
-          loadWorkItems();
+    if (result.isConfirmed) {
+      setIsLoading(true);
+      try {
+        const res = await ApiService.deleteItem(uid);
+        if (res) {
+          Swal.fire("สำเร็จ!", "ลบข้อมูลสำเร็จ", "success");
+          setSelectedUids(new Set());
+          loadData(filters);
         } else {
-          alert("Error: " + data.message);
+          Swal.fire("ผิดพลาด!", "เกิดข้อผิดพลาด: " + res.error, "error");
         }
-      } else {
-        const data = await res.json();
-        if (data.success) {
-          setShowSuccessDialog(true);
-          loadWorkItems();
-        } else {
-          alert("Error: " + data.message);
-        }
+      } catch {
+        Swal.fire("ผิดพลาด!", "ไม่สามารถลบข้อมูลได้", "error");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("Error saving item:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
-  };
-
-  const deleteSelected = async () => {
-    if (selectedItems.length === 0) return;
-    if (
-      !confirm(
-        `ต้องการลบรายการที่เลือก ${selectedItems.length} รายการหรือไม่?`
-      )
-    )
-      return;
-
-    let deletedCount = 0;
-    let failedCount = 0;
-
-    await Promise.all(
-      selectedItems.map(async (item) => {
-        try {
-          const data = await res.json();
-          if (data.success) deletedCount++;
-          else failedCount++;
-        } catch {
-          failedCount++;
-        }
-      })
-    );
-
-    let msg = `ลบสำเร็จ ${deletedCount} รายการ`;
-    if (failedCount > 0) msg += `, ล้มเหลว ${failedCount} รายการ`;
-    alert(msg);
-    setSelectAll(false);
-    loadWorkItems();
   };
 
   const goToPage = (page) => {
@@ -617,7 +583,17 @@ export default function BudgetApp() {
   
             <SearchInput
               value={filters.searchText}
-              onSearch={(val) => loadData(filters)}
+              onSearch={(val) => {
+                // 1. สร้าง object filter ใหม่ที่มีค่าค้นหาล่าสุด
+                const newFilters = { ...filters, searchText: val };
+                
+                // 2. อัปเดต state เพื่อให้ช่องค้นหาแสดงค่าที่พิมพ์
+                setFilters(newFilters);
+                
+                // 3. เรียก loadData โดยส่ง (level, pCode, filters)
+                // ต้องส่ง parentCode เข้าไปด้วยเพื่อให้ยังอยู่ในระดับเดิม
+                loadData(currentLevel, parentCode, newFilters);
+              }}
               placeholder="ค้นหา..."
             />
   
@@ -628,67 +604,10 @@ export default function BudgetApp() {
                 <IconRefresh />Refresh
               </button>
   
-              <button onClick={deleteSelected} disabled={selectedItems.size === 0}
-                className="button-primary-border">
-                <IconTrash />ลบที่เลือก ({selectedItems.size})
-              </button>
   
-              <button className="button-primary-border" onClick={() => setDrawerOpen(true)}>
-                <IconFilter />
-                ตัวกรอง
-              </button>
+             
             </div>
   
-            <FilterDrawer
-              open={drawerOpen}
-              onClose={() => setDrawerOpen(false)}
-              onSearch={clearFilters}
-              onClear={clearFilters}
-            >
-              <div className="grid grid-cols-1 gap-4 mb-6">
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
-                  <input type="text" value={filters.name}
-                    onChange={(e) => handleFilterChange("name", e.target.value)}
-                    className="custom-input"
-                    placeholder="วัสดุ..." />
-                </div> */}
-  
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
-                  <select 
-                    value={filters.unitId}
-                    onChange={(e) => handleFilterChange("unitId", e.target.value)}
-                    className="custom-input"
-                    placeholder="ค้นหา"
-                  >
-                    <option value="">ทั้งหมด</option>
-                    {units.map((unit) => (
-                      <option key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-  
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
-                  <select 
-                    value={filters.unitId}
-                    onChange={(e) => handleFilterChange("unitId", e.target.value)}
-                    className="custom-input"
-                    placeholder="ค้นหา"
-                  >
-                    <option value="">ทั้งหมด</option>
-                    {units.map((unit) => (
-                      <option key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </FilterDrawer>
           </div>
           {currentLevel > 0 && (
             <div className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
@@ -737,20 +656,16 @@ export default function BudgetApp() {
                   <thead className="bg-gray-50/50">
                     <tr>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
-                      <th className="px-6 py-3">
-                        <div className="flex justify-center">
-                          <input
-                            type="checkbox"
-                            className="custom-checkbox"
-                            checked={selectAll}
-                            onChange={handleToggleSelectAll}
-                          />
-                        </div>
-                      </th>
+                   
                       <th className="px-6 py-3 text-center">ลำดับ</th>
-                      <th className="px-6 py-3 text-center">รหัสรายการ</th>
+                      <th className="px-6 py-3 text-center">
+                            {currentLevel === 0 ? "รหัสหมวดหมู่" : "รหัสรายการ"}
+                      </th>                      
                       <th className="px-6 py-3 text-center">ปีงบประมาณ</th>
-                      <th className="px-6 py-3 text-center">รายการ</th>
+                      <th className="px-6 py-3 text-center">ประเภท</th>
+                      <th className="px-6 py-3 text-center">
+                        {currentLevel === 0 ? "หมวดหมู่" : "รายการ"}
+                      </th>
                       <th className="px-6 py-3 text-center">สถานะ</th>
                     </tr>
                   </thead>
@@ -780,31 +695,12 @@ export default function BudgetApp() {
                                 </svg> 
                                 <span>ดูรายละเอียด</span>
                               </button>
-
-                              <button 
-                                className="kebab-menu-item w-full text-red-500 hover:bg-red-50" 
-                                onClick={() => handleDelete(item.uid)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16">
-                                  <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                </svg> 
-                                <span>ลบรายการ</span>
-                              </button>
                             </KebabMenu>
                           </td>
-
-                          <td className="px-6 py-4 text-center">
-                            <input
-                              type="checkbox"
-                              className="custom-checkbox"
-                              checked={item.selected || false}
-                              onChange={() => handleItemSelect(globalIdx)}
-                            />
-                          </td>
-
                           <td className="px-6 py-4 text-center tabular-nums">{globalIdx + 1}</td>
                           <td className="px-6 py-4">{item.code}</td>
                           <td className="px-6 py-4">{item.year}</td>
+                          <td className="px-6 py-4"></td>
                           <td className="px-6 py-4 font-medium text-gray-700">{item.itemName}</td>
                           <td className="px-6 py-4">
                             <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium">
