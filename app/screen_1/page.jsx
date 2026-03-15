@@ -130,10 +130,10 @@ function Modal({ show, onClose, title, children, footer }) {
 function ItemForm({ item, onChange, unitList }) {
   return (
     <>
-      <label className="text-label">ชื่อวัสดุ</label>
-      <input className="custom-input" type="text" value={item.header_name} placeholder="ชื่อวัสดุ" onChange={(e) => onChange({ ...item, header_name: e.target.value })} />
+      <label className="text-label">หัวข้อรายการ</label>
+      <input className="custom-input" type="text" value={item.header_name} placeholder="หัวข้อรายการ" onChange={(e) => onChange({ ...item, header_name: e.target.value })} />
 
-      <label className="text-label mt-3">UOM</label>
+      <label className="text-label mt-3">ลำดับหัวข้อรายการ</label>
       <select value={item.unitId} onChange={(e) => onChange({ ...item, unitId: e.target.value })}
         className="custom-input"
         placeholder="ค้นหา">
@@ -145,8 +145,8 @@ function ItemForm({ item, onChange, unitList }) {
         ))}
       </select>
 
-      <label className="text-label mt-3">รหัสกระทรวงพาณิชย์</label>
-      <input className="custom-input" type="text" value={item.header_code} placeholder="รหัสกระทรวงพาณิชย์" onChange={(e) => onChange({ ...item, header_code: e.target.value })} />
+      <label className="text-label mt-3">ลำดับรายการ</label>
+      <input className="custom-input" type="text" value={item.header_code} placeholder="ลำดับรายการ" onChange={(e) => onChange({ ...item, header_code: e.target.value })} />
 
 
     </>
@@ -269,17 +269,17 @@ export default function BudgetApp() {
 
   const saveItem = async () => {
     if (!formItem.header_name) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก ชื่อวัสดุ", "warning");
+      Swal.fire("แจ้งเตือน", "กรุณากรอก หัวข้อรายการ", "warning");
       return;
     }
 
-    if (!formItem.unitId) {
-      Swal.fire("แจ้งเตือน", "กรุณาเลือก UOM", "warning");
-      return;
-    }
+    // if (!formItem.unitId) {
+    //   Swal.fire("แจ้งเตือน", "กรุณาเลือก UOM", "warning");
+    //   return;
+    // }
 
     if (!formItem.header_code) {
-      Swal.fire("แจ้งเตือน", "กรุณากรอก รหัสกระทรวงพาณิชย์", "warning");
+      Swal.fire("แจ้งเตือน", "กรุณากรอก ลำดับรายการ", "warning");
       return;
     }
 
@@ -414,22 +414,22 @@ export default function BudgetApp() {
           >
             <div className="grid grid-cols-1 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">วัสดุ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">หัวข้อรายการ</label>
                 <input type="text" value={filters.header_name}
                   onChange={(e) => handleFilterChange("header_name", e.target.value)}
                   className="custom-input"
-                  placeholder="วัสดุ..." />
+                  placeholder="หัวข้อรายการ..." />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">รหัสกระทรวงพาณิชย์</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ลำดับรายการ</label>
                 <input type="text" value={filters.header_code}
                   onChange={(e) => handleFilterChange("header_code", e.target.value)}
                   className="custom-input"
-                  placeholder="รหัสกระทรวงพาณิชย์" />
+                  placeholder="ลำดับรายการ" />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">หน่วย</label>
                 <select value={filters.unitId}
                   onChange={(e) => handleFilterChange("unitId", e.target.value)}
@@ -442,7 +442,7 @@ export default function BudgetApp() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
             </div>
           </FilterDrawer>
         </div>
@@ -454,8 +454,7 @@ export default function BudgetApp() {
               <thead className="bg-gray-50/50">
                 <tr>
                   <th className="w-10"></th>
-                  <th className="w-10">No.</th>
-                  <th className="w-30">รหัส</th>
+                  <th className="w-10">ลำดับ</th>
                   <th className="w-30">ปี</th>
                   <th className="w-30">ประเภท</th>
                   <th className="w-80">รายการ</th>
@@ -506,7 +505,6 @@ export default function BudgetApp() {
                       <td className="px-6 py-4 text-center align-middle text-sm text-gray-900 tabular-nums">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
-                      <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.header_code}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900 text-center">{item.fiscal}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_type}</td>
                       <td className="px-6 py-4 align-middle text-sm text-gray-900">{item.header_name}</td>
@@ -539,7 +537,7 @@ export default function BudgetApp() {
         <Modal
           show={showDialog}
           onClose={() => setShowDialog(false)}
-          title={isEditMode ? "แก้ไขวัสดุ" : "เพิ่มวัสดุ"}
+          title={isEditMode ? "แก้ไขหัวข้อรายการ" : "เพิ่มหัวข้อรายการ"}
           footer={
             <>
               <button type="button" onClick={() => setShowDialog(false)} style={{ width: "100px" }}
